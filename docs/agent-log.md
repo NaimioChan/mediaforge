@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-11-11 22:20 · hermes · 替换 logo 并完成安装验证
+
+**任务**：用户提供品牌 logo（1024×1024 PNG），替换全部图标并重新交付。
+
+**改动**：
+
+- `npx tauri icon` 生成全套：`icon.ico` 含 16/24/32/48/64/256 六尺寸，
+  另有 32/64/128/128@2x/icon.png 与 Windows Store 系列
+- 删掉用不到的 `icons/ios/`、`icons/android/`、`icon.icns`（共 30 余个文件），
+  同步从 `bundle.icon` 移除 `.icns` 引用
+- `bundle.windows.nsis.installerIcon` / `uninstallerIcon` 指向 `icons/icon.ico`
+- 应用内左上角品牌区：`index.html` 的 `<span>MF</span>` 换成 `<img src="/src/assets/logo.png">`，
+  尺寸 24px，去掉原来给的圆角（logo 自带圆形底）
+
+**过程中发现三个图标相关的坑**：
+
+1. **换图标后必须清构建缓存。** `tauri-build` 的 `rerun-if-changed` 不覆盖 `icons/`。
+   第一次换完直接打包，exe 里仍是 Tauri 默认图标（`resource.lib` 时间戳停在改图标之前）。
+   清掉 `target/release/build/mediaforge-v2-*` 后重编才生效。
+2. **安装程序图标是独立配置。** `bundle.icon` 不管 NSIS 安装器本身，
+   不配 `installerIcon` 就是 NSIS 默认的绿色下载箭头。
+3. **应用内 logo 不跟随图标集。** `tauri icon` 只处理系统级图标，
+   前端要单独放一份到 `src/assets/logo.png`。
+
+**验证**：
+
+| 项目 | 结果 |
+|---|---|
+| exe 图标 | 从 exe 提取确认是新 logo |
+| 安装程序图标 | 从 setup 提取确认是新 logo |
+| 应用内 logo（dev） | 128×128 源，渲染 24×24，`complete && naturalWidth>0` |
+| 应用内 logo（安装后） | `http://tauri.localhost/` 下同样正确 |
+| 静默安装 | exit=0，185 MB，9 个 ffmpeg 文件 |
+| 安装后转换 | mp4 → avi 成功，产物 mpeg4 + mp3、640×360、2.04 s |
+| 静默卸载 | exit=0，目录/注册项/开始菜单全部清空 |
+
+**遗留**：
+
+- `embedBootstrapper` 仍因网络无法打包（详见下方条目）。
+- 仓库已初始化并完成首次提交（`b123237`），未推送。
+
+---
+
 ## 2026-11-11 21:20 · hermes · MediaForge v2 从零搭建
 
 **任务**：按已确认的实施计划（`docs/plan-2026-11-11.md`）从零实现 Tauri 版媒体转换器。
