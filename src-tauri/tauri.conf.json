@@ -1,0 +1,76 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MediaForge",
+  "version": "2.0.0",
+  "identifier": "com.naimio.mediaforge",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "MediaForge",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 900,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true,
+        "dragDropEnabled": true,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "publisher": "Naimio",
+    "copyright": "MIT License",
+    "category": "Utility",
+    "shortDescription": "媒体格式转换器",
+    "longDescription": "基于 ffmpeg 的媒体格式转换器，支持视频、音频、图像、字幕四类共 71 种目标格式。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../vendor/ffmpeg/bin/ffmpeg.exe": "ffmpeg/ffmpeg.exe",
+      "../vendor/ffmpeg/bin/ffprobe.exe": "ffmpeg/ffprobe.exe",
+      "../vendor/ffmpeg/bin/avcodec-63.dll": "ffmpeg/avcodec-63.dll",
+      "../vendor/ffmpeg/bin/avdevice-63.dll": "ffmpeg/avdevice-63.dll",
+      "../vendor/ffmpeg/bin/avfilter-12.dll": "ffmpeg/avfilter-12.dll",
+      "../vendor/ffmpeg/bin/avformat-63.dll": "ffmpeg/avformat-63.dll",
+      "../vendor/ffmpeg/bin/avutil-61.dll": "ffmpeg/avutil-61.dll",
+      "../vendor/ffmpeg/bin/swresample-7.dll": "ffmpeg/swresample-7.dll",
+      "../vendor/ffmpeg/bin/swscale-10.dll": "ffmpeg/swscale-10.dll"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "SimpChinese",
+          "English"
+        ],
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      }
+    }
+  }
+}

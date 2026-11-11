@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaForge</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- 顶部工具条 -->
+      <header class="toolbar" id="toolbar">
+        <div class="brand">
+          <img class="brand-mark" src="/src/assets/logo.png" alt="" width="24" height="24" />
+          <span class="brand-name">MediaForge</span>
+        </div>
+        <div class="toolbar-actions">
+          <fluent-button id="btn-add-files" appearance="accent">添加文件</fluent-button>
+          <fluent-button id="btn-add-folder">添加文件夹</fluent-button>
+          <fluent-divider orientation="vertical"></fluent-divider>
+          <fluent-button id="btn-start" appearance="accent">开始转换</fluent-button>
+          <fluent-button id="btn-cancel" disabled>取消</fluent-button>
+          <fluent-button id="btn-clear" appearance="subtle">清空</fluent-button>
+        </div>
+      </header>
+
+      <!-- 主体：左队列 + 右参数 -->
+      <main class="main">
+        <section class="queue" id="queue">
+          <div class="empty-state" id="empty-state">
+            <p class="empty-title">把文件拖进窗口</p>
+            <p class="empty-hint">支持文件与文件夹，也可以点上面的「添加文件」</p>
+          </div>
+          <ul class="task-list" id="task-list"></ul>
+        </section>
+
+        <aside class="panel" id="panel">
+          <h2 class="panel-title">转换参数</h2>
+
+          <div class="field">
+            <label class="field-label" for="quality">
+              质量 <span class="field-value" id="quality-value">80</span>
+            </label>
+            <input type="range" id="quality" min="0" max="100" step="1" value="80" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="audio-bitrate">音频码率</label>
+            <select id="audio-bitrate" class="select">
+              <option value="64">64 kbps</option>
+              <option value="96">96 kbps</option>
+              <option value="128">128 kbps</option>
+              <option value="192" selected>192 kbps</option>
+              <option value="256">256 kbps</option>
+              <option value="320">320 kbps</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="max-height">分辨率上限</label>
+            <select id="max-height" class="select">
+              <option value="">不限制</option>
+              <option value="2160">2160p</option>
+              <option value="1440">1440p</option>
+              <option value="1080">1080p</option>
+              <option value="720">720p</option>
+              <option value="480">480p</option>
+            </select>
+          </div>
+
+          <div class="field field-row">
+            <label class="field-label" for="strip-metadata">剥离元数据</label>
+            <input type="checkbox" id="strip-metadata" />
+          </div>
+
+          <div class="field field-row">
+            <label class="field-label" for="copy-streams">码流直拷</label>
+            <input type="checkbox" id="copy-streams" />
+          </div>
+
+          <fluent-divider></fluent-divider>
+
+          <div class="field">
+            <label class="field-label" for="output-dir">输出目录</label>
+            <div class="dir-row">
+              <input
+                type="text"
+                id="output-dir"
+                class="text-input"
+                placeholder="与源文件同目录"
+                readonly
+              />
+              <fluent-button id="btn-pick-dir" size="small">选择</fluent-button>
+            </div>
+            <p class="field-help">留空则输出到源文件旁边</p>
+          </div>
+
+          <fluent-divider></fluent-divider>
+
+          <div class="status-block" id="status-block">
+            <p class="status-line" id="status-ffmpeg">ffmpeg 未就绪</p>
+            <p class="status-line" id="status-caps"></p>
+          </div>
+        </aside>
+      </main>
+
+      <!-- 底部状态栏 -->
+      <footer class="statusbar">
+        <span id="status-summary">就绪</span>
+        <span id="status-progress"></span>
+      </footer>
+    </div>
+
+    <!-- 拖放提示层 -->
+    <div class="drop-overlay" id="drop-overlay" hidden>
+      <div class="drop-card">
+        <p class="drop-title">松手加入队列</p>
+      </div>
+    </div>
+  </body>
+</html>

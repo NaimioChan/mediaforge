@@ -1,0 +1,31 @@
+# 依赖与构建产物
+node_modules
+dist
+dist-ssr
+*.local
+src-tauri/target
+
+# ffmpeg（181 MB，不进版本库；用 scripts/fetch-ffmpeg.ps1 准备）
+vendor/ffmpeg/bin/*.exe
+vendor/ffmpeg/bin/*.dll
+
+# 源 logo（1024×1024）与设计源文件。生成的图标在 src-tauri/icons/ 下已提交；
+# 原图与工程文件保留在本地作为换图标时的输入，不进版本库。
+src-tauri/icons/MediaForgeLogo1024x1024.png
+src-tauri/icons/*.figcraft
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 日志
+logs
+*.log
+npm-debug.log*

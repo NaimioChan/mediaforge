@@ -1,0 +1,397 @@
+/* MediaForge 界面样式。
+ *
+ * 颜色全部走 Fluent 2 的 CSS 变量（setTheme 注入），
+ * 只在这里补布局与少量密度调整。
+ */
+
+:root {
+  --mf-radius: 6px;
+  --mf-gap: 12px;
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 14px;
+  color: var(--colorNeutralForeground1, #1b1b1b);
+  background: var(--colorNeutralBackground1, #fff);
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+}
+
+/* ---------- 顶部工具条 ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mf-gap);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--colorNeutralStroke2, #e5e5e5);
+  background: var(--colorNeutralBackground2, #fafafa);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-mark {
+  width: 24px;
+  height: 24px;
+  display: block;
+  object-fit: contain;
+  /* logo 自带圆形底，不要再套一层圆角，否则边缘会被裁出直边 */
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 主体 ---------- */
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  min-height: 0;
+}
+
+.queue {
+  position: relative;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  color: var(--colorNeutralForeground3, #616161);
+  pointer-events: none;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 17px;
+  color: var(--colorNeutralForeground2, #424242);
+}
+
+.empty-hint {
+  margin: 0;
+  font-size: 13px;
+}
+
+.task-list {
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---------- 任务行 ---------- */
+
+.task {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "main controls"
+    "status status"
+    "progress progress";
+  gap: 4px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--colorNeutralStroke2, #e5e5e5);
+  border-radius: var(--mf-radius);
+  background: var(--colorNeutralBackground1, #fff);
+  cursor: default;
+}
+
+.task[data-focused="true"] {
+  border-color: var(--colorBrandStroke1, #0f6cbd);
+  background: var(--colorNeutralBackground1Selected, #f0f6ff);
+}
+
+.task[data-status="failed"] {
+  border-color: var(--colorPaletteRedBorder1, #d13438);
+}
+
+.task[data-status="incompatible"] {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.task[data-status="running"] {
+  border-color: var(--colorBrandStroke1, #0f6cbd);
+}
+
+.task-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.task-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--colorNeutralForeground3, #616161);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-controls {
+  grid-area: controls;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-status {
+  grid-area: status;
+  font-size: 12px;
+  color: var(--colorNeutralForeground2, #424242);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task[data-status="failed"] .task-status {
+  color: var(--colorPaletteRedForeground1, #c50f1f);
+}
+
+.task[data-status="done"] .task-status {
+  color: var(--colorPaletteGreenForeground1, #107c10);
+}
+
+.task[data-status="incompatible"] .task-status {
+  color: var(--colorNeutralForeground3, #616161);
+}
+
+.task-progress {
+  grid-area: progress;
+  height: 3px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: var(--colorNeutralBackground4, #f0f0f0);
+  overflow: hidden;
+}
+
+.task-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  background: var(--colorBrandBackground, #0f6cbd);
+  transition: width 120ms linear;
+}
+
+.task[data-status="done"] .task-progress-fill {
+  background: var(--colorPaletteGreenBackground3, #107c10);
+}
+
+/* ---------- 原生控件（补齐 Fluent 未覆盖的部分） ---------- */
+
+.select,
+.text-input {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+  border-radius: var(--mf-radius);
+  background: var(--colorNeutralBackground1, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.select {
+  padding-right: 4px;
+}
+
+.select:focus-visible,
+.text-input:focus-visible {
+  outline: 2px solid var(--colorBrandStroke1, #0f6cbd);
+  outline-offset: 1px;
+}
+
+.task-format {
+  max-width: 210px;
+  font-size: 13px;
+}
+
+.icon-button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--mf-radius);
+  background: transparent;
+  color: var(--colorNeutralForeground3, #616161);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--colorNeutralBackground1Hover, #f5f5f5);
+  color: var(--colorNeutralForeground1, #1b1b1b);
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--colorBrandBackground, #0f6cbd);
+  cursor: pointer;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--colorBrandBackground, #0f6cbd);
+}
+
+/* ---------- 右侧参数面板 ---------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  overflow-y: auto;
+  border-left: 1px solid var(--colorNeutralStroke2, #e5e5e5);
+  background: var(--colorNeutralBackground2, #fafafa);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field-label {
+  font-size: 13px;
+  color: var(--colorNeutralForeground2, #424242);
+}
+
+.field-value {
+  margin-left: 6px;
+  font-weight: 600;
+  color: var(--colorBrandForeground1, #0f6cbd);
+}
+
+.field-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--colorNeutralForeground3, #616161);
+}
+
+.dir-row {
+  display: flex;
+  gap: 6px;
+}
+
+.dir-row .text-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.status-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--colorNeutralForeground3, #616161);
+}
+
+.status-line {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 底部状态栏 ---------- */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--colorNeutralForeground3, #616161);
+  border-top: 1px solid var(--colorNeutralStroke2, #e5e5e5);
+  background: var(--colorNeutralBackground2, #fafafa);
+}
+
+/* ---------- 拖放提示层 ---------- */
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--colorBrandBackground, #0f6cbd) 12%, transparent);
+  backdrop-filter: blur(1px);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.drop-overlay[hidden] {
+  display: none;
+}
+
+.drop-card {
+  padding: 22px 32px;
+  border: 2px dashed var(--colorBrandStroke1, #0f6cbd);
+  border-radius: 10px;
+  background: var(--colorNeutralBackground1, #fff);
+}
+
+.drop-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--colorBrandForeground1, #0f6cbd);
+}

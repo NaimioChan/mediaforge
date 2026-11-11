@@ -1,0 +1,60 @@
+MIT License
+
+Copyright (c) 2026 非茗 (Naimio)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+---------------------------------------------------------------------------
+第三方组件：FFmpeg
+---------------------------------------------------------------------------
+
+本程序随安装包分发 FFmpeg 的可执行文件（ffmpeg.exe、ffprobe.exe 及 7 个
+动态链接库），版本 n9.0.2，构建来源为 BtbN/FFmpeg-Builds 的 win64-gpl-shared。
+
+FFmpeg 采用 GNU General Public License version 3（GPL v3）授权，
+该构建额外包含以下 GPL 组件：
+
+- libx264（H.264 编码）— GPL v2+
+- libx265（H.265/HEVC 编码）— GPL v2+
+- 以及其他按照 GPL 分发的编解码库
+
+完整的许可文本见 vendor/ffmpeg/LICENSE.txt。
+
+FFmpeg 项目主页：https://ffmpeg.org/
+源码下载：https://ffmpeg.org/download.html
+本项目分发的构建二进制来源：https://github.com/BtbN/FFmpeg-Builds
+
+FFmpeg 是 FFmpeg 项目的作品，本程序仅以独立进程方式调用，未修改其源码，
+也未声称对其拥有任何权利。
+
+---------------------------------------------------------------------------
+第三方组件：Microsoft Fluent 2 Web Components
+---------------------------------------------------------------------------
+
+@fluentui/web-components、@fluentui/tokens 由 Microsoft 发布，MIT 许可。
+https://github.com/microsoft/fluentui
+
+---------------------------------------------------------------------------
+第三方组件：Tauri
+---------------------------------------------------------------------------
+
+Tauri 由 Tauri Programme within the Commons Conservancy 维护，
+Apache-2.0 / MIT 双许可。
+https://tauri.app/
