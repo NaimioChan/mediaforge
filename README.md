@@ -11,6 +11,8 @@ Windows 桌面媒体格式转换器。
 - 转换中途取消不保留未完成文件
 - 同一格式互转时自动避让源文件，不覆盖原件
 
+![MediaForge 界面](docs/screenshot.png)
+
 ## 下载
 
 从 [Releases](https://github.com/NaimioChan/mediaforge/releases) 下载
