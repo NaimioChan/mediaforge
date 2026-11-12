@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-11-12 17:06 · hermes · CI 首次运行结果（合入 main 前）
+
+- 改：docs/agent-log.md
+- 任务：确认上一条的 workflow 在 GitHub 上真跑通。
+- 结果：run 43223622213，两个 job 全绿。
+  - `前端类型检查与构建` 40 秒。
+  - `Rust 单测与端到端` 4 分 13 秒（冷启动，含 181 MB ffmpeg 下载与
+    crates 首次拉取）。
+  - 三组测试：152 / 11 / 8 全 passed；e2e 3.63 秒、sweep 7.19 秒，
+    与本地耗时同一量级。
+  - 日志里 `ffmpeg version n9.0.2-48-gd4070a14ce-20261110`，与
+    `scripts/fetch-ffmpeg.ps1` 钉住的版本一致，缓存键取对了。
+- 遗留：无。上一条的「首次运行待确认」已闭合。
+
+---
+
 ## 2026-11-12 17:10 · hermes · 接入 CI 测试守门
 
 - 改：.github/workflows/ci.yml（新）, CONTRIBUTING.md
