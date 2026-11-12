@@ -971,7 +971,7 @@ impl<'a> Ctx<'a> {
     }
 
     fn append_audio_quality(&mut self, encoder: &str) {
-        let bitrate = self.options.audio_bitrate();
+        let bitrate = self.effective_audio_bitrate(encoder);
 
         match encoder {
             "flac" => {
@@ -1027,6 +1027,51 @@ impl<'a> Ctx<'a> {
         if let Some(channels) = self.options.tune.audio_channels.filter(|c| *c >= 1) {
             self.push2("-ac", &channels.to_string());
         }
+    }
+
+    /// 实际生效的音频码率。
+    ///
+    /// 每个有损编码器都有自己的取值范围，超了 ffmpeg 直接拒绝打开编码器，
+    /// 用户看到的是「无法转换」。libopus 与 libvorbis 的上限还随声道数变化：
+    /// 单声道 libopus 最多 256k，立体声能到 512k。这里按目标声道数夹紧，
+    /// 并把夹紧的事实写进 notice，避免用户以为设置生效了。
+    fn effective_audio_bitrate(&mut self, encoder: &str) -> u32 {
+        let wanted = self.options.audio_bitrate();
+        // 目标声道数：用户显式指定优先，否则用源的。
+        let channels = self
+            .options
+            .tune
+            .audio_channels
+            .or_else(|| self.probe.audio().and_then(|a| a.channels))
+            .unwrap_or(2)
+            .max(1);
+
+        let ceiling = match encoder {
+            "libopus" => {
+                // 实测：单声道 256k、立体声 512k 是硬上限。
+                if channels <= 1 { 256 } else { 512 }
+            }
+            "libvorbis" => {
+                // 实测：单声道 192k、立体声 384k。
+                if channels <= 1 { 192 } else { 384 }
+            }
+            "mp2" => 384,
+            _ => 1536,
+        };
+
+        let floor = match encoder {
+            "libopus" => 6,
+            "libvorbis" => 32,
+            _ => 32,
+        };
+
+        let actual = wanted.clamp(floor, ceiling);
+        if actual != wanted {
+            self.notices.push(format!(
+                "{encoder} 的码率上限是 {ceiling}k（{channels} 声道），已从 {wanted}k 调整"
+            ));
+        }
+        actual
     }
 
     /// 缩放与帧率：两者都是滤镜，必须合成一条 `-vf`，否则后一条会覆盖前一条。
@@ -1548,6 +1593,86 @@ mod tests {
         assert!(text.contains("max_colors=64"), "{text}");
         assert!(text.contains("dither=none"), "{text}");
         assert!(text.contains("-loop -1"), "不循环应为 -1：{text}");
+    }
+
+    // ---------- 音频码率上限 ----------
+
+    #[test]
+    fn opus_bitrate_is_capped_for_mono() {
+        // 实测：单声道 libopus 最多 256k。超出时 ffmpeg 拒绝打开编码器，
+        // 用户看到的是「无法转换」。必须夹紧并说明。
+        let plan = build(
+            "opus",
+            Options {
+                audio_bitrate_kbps: Some(320),
+                ..Default::default()
+            },
+            MP3_JSON,
+        );
+        let text = joined(&plan);
+        assert!(text.contains("-b:a 256k"), "单声道应夹到 256k：{text}");
+        assert!(
+            plan.notice.as_deref().unwrap_or("").contains("256k"),
+            "应提示码率被调整：{:?}",
+            plan.notice
+        );
+    }
+
+    #[test]
+    fn opus_bitrate_allows_more_for_stereo() {
+        let plan = build(
+            "opus",
+            Options {
+                audio_bitrate_kbps: Some(320),
+                tune: Tune {
+                    audio_channels: Some(2),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            MP3_JSON,
+        );
+        assert!(
+            joined(&plan).contains("-b:a 320k"),
+            "立体声能到 512k，320k 不该被改：{}",
+            joined(&plan)
+        );
+    }
+
+    #[test]
+    fn vorbis_bitrate_is_capped_too() {
+        // vorbis 走 -q:a，码率只用于反推质量等级；但码率本身也要夹，
+        // 否则反过来算出的质量等级会超出 0-10。
+        let plan = build(
+            "ogg",
+            Options {
+                audio_bitrate_kbps: Some(512),
+                ..Default::default()
+            },
+            MP3_JSON,
+        );
+        let text = joined(&plan);
+        let qa: u32 = text
+            .split("-q:a ")
+            .nth(1)
+            .and_then(|s| s.split_whitespace().next())
+            .and_then(|s| s.parse().ok())
+            .expect("应有 -q:a");
+        assert!(qa <= 10, "vorbis 质量等级必须在 0-10：{qa}");
+    }
+
+    #[test]
+    fn mp3_accepts_high_bitrates_without_clamping() {
+        let plan = build(
+            "mp3",
+            Options {
+                audio_bitrate_kbps: Some(320),
+                ..Default::default()
+            },
+            MP3_JSON,
+        );
+        assert!(joined(&plan).contains("-b:a 320k"), "{}", joined(&plan));
+        assert!(plan.notice.is_none(), "不该有夹紧提示：{:?}", plan.notice);
     }
 
     #[test]

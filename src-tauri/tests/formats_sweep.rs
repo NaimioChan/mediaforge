@@ -267,3 +267,26 @@ fn image_formats_survive_copy_enabled() {
         },
     );
 }
+
+// ---------- 码率上限：用户设置的 320k 不能让编码器打不开 ----------
+
+/// 用户 settings.json 里常有 320k，而单声道 libopus 上限只有 256k。
+/// 这类组合必须在参数构建阶段夹紧，而不是让 ffmpeg 报「无法打开编码器」。
+#[test]
+fn every_audio_target_survives_a_320k_setting() {
+    let fx = fixtures();
+    let dir = TempDir::new("bitrate320");
+    let source = dir.join("src.mp3");
+    std::fs::copy(fx.join("audio.mp3"), &source).expect("复制源失败");
+
+    let options = Options {
+        audio_bitrate_kbps: Some(320),
+        ..Default::default()
+    };
+    let failures = sweep(&dir, "br320", &source, options);
+    assert!(
+        failures.is_empty(),
+        "设成 320k 后以下格式失败：\n{}",
+        failures.join("\n")
+    );
+}
