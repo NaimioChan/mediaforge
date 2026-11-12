@@ -9,8 +9,8 @@
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::progress::Progress;
 
@@ -96,9 +96,10 @@ pub fn run_ffmpeg(
             }
 
             if progress.feed(&line)
-                && let Some(cb) = &on_progress {
-                    cb(progress.percent, progress.speed);
-                }
+                && let Some(cb) = &on_progress
+            {
+                cb(progress.percent, progress.speed);
+            }
         }
     }
 

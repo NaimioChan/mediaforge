@@ -120,7 +120,8 @@ fn is_flag_column(text: &str) -> bool {
         return false;
     }
 
-    text.chars().all(|c| c == '.' || c == 'd' || c.is_ascii_uppercase())
+    text.chars()
+        .all(|c| c == '.' || c == 'd' || c.is_ascii_uppercase())
 }
 
 #[cfg(test)]

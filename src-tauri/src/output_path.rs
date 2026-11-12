@@ -60,7 +60,13 @@ fn sanitize(name: &str) -> String {
     const INVALID: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
     let cleaned: String = name
         .chars()
-        .map(|c| if INVALID.contains(&c) || (c as u32) < 32 { '_' } else { c })
+        .map(|c| {
+            if INVALID.contains(&c) || (c as u32) < 32 {
+                '_'
+            } else {
+                c
+            }
+        })
         .collect();
     let trimmed = cleaned.trim_end_matches(['.', ' ']).to_string();
     if trimmed.is_empty() {

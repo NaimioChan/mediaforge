@@ -157,7 +157,10 @@ mod tests {
         let first = out.lines().next().unwrap();
         assert_eq!(first, "{1}{1}25.00");
         // 0.5s × 25fps = 第 12 帧；1.5s × 25 = 第 38 帧。
-        assert!(out.contains("{13}{38}hello world") || out.contains("{12}{38}hello world"), "{out}");
+        assert!(
+            out.contains("{13}{38}hello world") || out.contains("{12}{38}hello world"),
+            "{out}"
+        );
     }
 
     #[test]
@@ -198,7 +201,11 @@ mod tests {
     fn sbv_blocks_are_separated_by_blank_line() {
         let out = to_sbv(&srt_to_cues(SRT));
         assert!(out.contains("\n\n"), "{out}");
-        assert_eq!(out.matches("\n\n").count(), 2, "两条字幕应有两个空行分隔：{out}");
+        assert_eq!(
+            out.matches("\n\n").count(),
+            2,
+            "两条字幕应有两个空行分隔：{out}"
+        );
     }
 
     #[test]

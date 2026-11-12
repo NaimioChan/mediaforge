@@ -44,9 +44,10 @@ impl Stream {
             StreamKind::Video if self.width > 0 && self.height > 0 => {
                 let mut s = format!("{}×{} · {}", self.width, self.height, self.codec);
                 if let Some(fps) = self.fps
-                    && fps > 0.0 {
-                        s.push_str(&format!(" · {fps:.2}fps"));
-                    }
+                    && fps > 0.0
+                {
+                    s.push_str(&format!(" · {fps:.2}fps"));
+                }
                 s
             }
             StreamKind::Video => self.codec.clone(),
@@ -332,11 +333,7 @@ fn parse_rational(text: &str) -> Option<f64> {
         return None;
     }
     let value = num / den;
-    if value.is_finite() {
-        Some(value)
-    } else {
-        None
-    }
+    if value.is_finite() { Some(value) } else { None }
 }
 
 #[cfg(test)]

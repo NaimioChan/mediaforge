@@ -35,15 +35,17 @@ impl ToolPaths {
     pub fn locate(resource_dir: Option<&Path>) -> Option<Self> {
         // 1. 环境变量优先，便于测试注入与用户自定义。
         if let Ok(dir) = std::env::var("MEDIAFORGE_FFMPEG_DIR")
-            && let Some(paths) = Self::from_dir(Path::new(&dir)) {
-                return Some(paths);
-            }
+            && let Some(paths) = Self::from_dir(Path::new(&dir))
+        {
+            return Some(paths);
+        }
 
         // 2. 打包后的资源目录。
         if let Some(dir) = resource_dir
-            && let Some(paths) = Self::from_dir(&dir.join("ffmpeg")) {
-                return Some(paths);
-            }
+            && let Some(paths) = Self::from_dir(&dir.join("ffmpeg"))
+        {
+            return Some(paths);
+        }
 
         // 3. 仓库内的 vendor 目录。开发期与 cargo test 都走这里。
         for candidate in repo_vendor_candidates() {

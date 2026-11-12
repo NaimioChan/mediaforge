@@ -5,23 +5,21 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use mediaforge_lib::args::{self, Options};
 use mediaforge_lib::caps::Caps;
 use mediaforge_lib::formats::by_id;
 use mediaforge_lib::paths::ToolPaths;
-use mediaforge_lib::probe::{parse as parse_probe, Probe};
+use mediaforge_lib::probe::{Probe, parse as parse_probe};
 use mediaforge_lib::runner::{self, Outcome};
 
 // ---------- 公共设施 ----------
 
 fn tools() -> ToolPaths {
     ToolPaths::locate(None).unwrap_or_else(|| {
-        panic!(
-            "找不到 ffmpeg。先运行 scripts/fetch-ffmpeg.ps1 把 9 个文件放到 vendor/ffmpeg/bin/"
-        )
+        panic!("找不到 ffmpeg。先运行 scripts/fetch-ffmpeg.ps1 把 9 个文件放到 vendor/ffmpeg/bin/")
     })
 }
 
@@ -143,12 +141,7 @@ fn probe_of(path: &Path) -> Probe {
 }
 
 /// 跑一次完整转换。返回产物路径与结局。
-fn convert(
-    source: &Path,
-    out: &Path,
-    format_id: &str,
-    options: &Options,
-) -> (PathBuf, Outcome) {
+fn convert(source: &Path, out: &Path, format_id: &str, options: &Options) -> (PathBuf, Outcome) {
     let t = tools();
     let target = by_id(format_id).unwrap_or_else(|| panic!("格式 {format_id} 不在表里"));
     let probe = probe_of(source);
@@ -260,7 +253,14 @@ fn png_to_avif_single_frame() {
     let source = make_source(
         &dir,
         "in.png",
-        &["-i", &video.to_string_lossy(), "-frames:v", "1", "-update", "1"],
+        &[
+            "-i",
+            &video.to_string_lossy(),
+            "-frames:v",
+            "1",
+            "-update",
+            "1",
+        ],
     );
     let out = dir.join("out.avif");
 
@@ -383,14 +383,20 @@ fn subtitle_conversions_produce_valid_syntax() {
     let vtt = std::fs::read_to_string(&vtt_path).expect("读 vtt 失败");
     assert!(vtt.starts_with("WEBVTT"), "VTT 应以 WEBVTT 开头：{vtt:.40}");
     // WebVTT 用点号分隔毫秒。
-    assert!(vtt.contains("00:00.500 --> 00:01.500"), "VTT 时间戳格式不对：{vtt}");
+    assert!(
+        vtt.contains("00:00.500 --> 00:01.500"),
+        "VTT 时间戳格式不对：{vtt}"
+    );
 
     // SRT → LRC
     let lrc_out = dir.join("out.lrc");
     let (lrc_path, lrc_outcome) = convert(&source, &lrc_out, "lrc", &Options::default());
     assert_ok(&lrc_outcome);
     let lrc = std::fs::read_to_string(&lrc_path).expect("读 lrc 失败");
-    assert!(lrc.contains("[00:00.50]hello world"), "LRC 时间戳格式不对：{lrc}");
+    assert!(
+        lrc.contains("[00:00.50]hello world"),
+        "LRC 时间戳格式不对：{lrc}"
+    );
 }
 
 // ---------- 8. ICO 尺寸约束 ----------
@@ -431,7 +437,10 @@ fn video_to_ico_respects_256_limit() {
     // 目录项里的宽高是单字节，0 表示 256。
     let entry = read_head(&path, 8 + 1);
     let width = entry[6];
-    assert!(width <= 128, "缩略尺寸应在 256 以内换算后不超过 128，实际 {width}");
+    assert!(
+        width <= 128,
+        "缩略尺寸应在 256 以内换算后不超过 128，实际 {width}"
+    );
 }
 
 // ---------- 9. DV ----------
