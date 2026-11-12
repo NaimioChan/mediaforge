@@ -1,15 +1,14 @@
 # MediaForge
 
-Windows 桌面媒体格式转换器。ffmpeg 的可视化外壳，界面用 Fluent 2，外壳用 Tauri 2。
+Windows 桌面媒体格式转换器。
 
-支持视频、音频、图像、字幕四类共 71 种目标格式。ffmpeg 随包分发，装完即可用，
-不需要另外安装任何东西。
+支持视频、音频、图像、字幕四类共 71 种目标格式。ffmpeg 随包分发，安装即用。
 
 - 队列式批量转换，可调并发数
 - 每个目标格式有各自的参数面板（编码器、质量、分辨率、码率等），只列出当前 ffmpeg
   构建真实支持的选项
-- 拖入文件夹时递归展开，可识别的媒体文件才入队
-- 转换中途取消会删掉半成品，不留打不开的空文件
+- 拖入文件夹时递归展开，可识别的媒体文件入队
+- 转换中途取消不保留未完成文件
 - 同一格式互转时自动避让源文件，不覆盖原件
 
 ## 下载
@@ -27,8 +26,6 @@ Windows 桌面媒体格式转换器。ffmpeg 的可视化外壳，界面用 Flue
 2. 在每条任务右侧选目标格式，选中任务后可在参数面板细调
 3. 「输出目录」留空则输出到源文件同目录；也可以手输路径或点「选择」
 4. 点「开始转换」
-
-输出目录不跨会话记忆，每次启动都是空的，避免产物落到上次选过的地方。
 
 ## 许可
 
@@ -67,16 +64,16 @@ npm run tauri build
 FFmpeg-Builds 的 `autobuild-2026-11-10-12-39`，不要改成 `latest`：上游每天出构建，
 内容一变，`copy.rs` 里实测出的直拷兼容表就可能失效。
 
-## 跑测试
+## 测试
 
 ```bash
 # 全部测试（152 个纯单测 + 11 个真实 ffmpeg 端到端 + 8 个全格式扫描）
 cargo test --manifest-path src-tauri/Cargo.toml
 
-# 只跑纯单测（不碰进程，约 0.2 秒）
+# 仅单测（不碰进程，约 0.2 秒）
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 
-# 只跑端到端（会真的执行转换，约 2 秒）
+# 仅端到端（会真的执行转换，约 2 秒）
 cargo test --manifest-path src-tauri/Cargo.toml --test e2e
 
 # 全格式扫描（71 个格式 × 重编码/直拷两种模式，约 5 秒）
@@ -171,7 +168,7 @@ ffmpeg 是子进程，前端刷新或重载不该丢掉正在跑的任务。
 
 ## 贡献
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。改动前请先读 [AGENTS.md](AGENTS.md) 里的铁律。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。改动前请先读 [AGENTS.md](AGENTS.md)。
 
 ## 版本与发布
 
