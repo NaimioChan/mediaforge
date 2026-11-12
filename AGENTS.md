@@ -25,13 +25,13 @@ npm install
 # 开发（Vite 走 1420 端口，必须 HTTP，file:// 下 ES module 会被 CORS 拦）
 npm run tauri dev
 
-# 纯单测（136 个，约 0.2 秒，不碰进程）
+# 纯单测（140 个，约 0.2 秒，不碰进程）
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 
 # 端到端（11 个，真跑 ffmpeg 并回读产物，约 2 秒）
 cargo test --manifest-path src-tauri/Cargo.toml --test e2e
 
-# 全格式扫描（7 个，71 个格式 × 重编码/直拷两种模式，约 5 秒）
+# 全格式扫描（8 个，71 个格式 × 重编码/直拷两种模式，约 5 秒）
 cargo test --manifest-path src-tauri/Cargo.toml --test formats_sweep
 
 # 全部测试
@@ -125,3 +125,20 @@ npm run tauri build
   H.264 视频 + Opus 音轨进 webm 仍会报错，判定时必须同时看视频码流。
 - **`display: grid` 会盖掉 `[hidden]`。** 类选择器优先级高于属性选择器，
   绝对定位的空状态要显式写 `.x[hidden] { display: none }`。
+- **音频码率必须按编码器与声道数夹紧。** 设置里的码率是全局值，但每个有损
+  编码器的上限不同，libopus 与 libvorbis 的上限还随声道数变化（单声道
+  libopus 上限 256k、立体声 512k；单声道 vorbis 192k、立体声 384k；mp2 384k）。
+  超出时 ffmpeg 直接拒绝打开编码器，产物 0 字节，界面只显示「无法转换」。
+  夹紧事实要写进 `notice`，否则用户以为设置生效了。
+  实现在 `args.rs` 的 `effective_audio_bitrate`。
+- **`cargo build --release` 的 exe 指向 devUrl，不能当安装包用。**
+  它没有注入前端资源，运行时会去连 `localhost:1420`。手工把它复制到
+  安装目录会得到「页面打不开」，而不是打包好的界面。验证界面必须用
+  `npm run tauri build` 的安装包，页面 origin 应为 `tauri.localhost`。
+- **同时开多个实例会撞 WebView2 用户数据目录。** 症状是
+  `failed to create webview: HRESULT(0x8007139F)`。测完先杀干净
+  `mediaforge-v2.exe` 再启动下一个，否则新实例起不来。
+- **`cargo fmt` 会把 CRLF 改成 LF。** 本仓 Rust 文件是 CRLF、前端文件是 LF，
+  直接 fmt 会让整个文件显示成改动，进而把无关文件混进提交。
+  fmt 之前先确认工作区干净，fmt 之后用 `git diff --numstat` 核对规模，
+  超出实际改动就按原行尾还原（`git show HEAD:<file>` 判断该文件原本的格式）。
