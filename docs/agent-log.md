@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-11-12 16:20 · hermes · 更新 AGENTS.md 至当前状态
+
+- 改：AGENTS.md
+- 任务：进入维护阶段，把 AGENTS.md 与实现对齐，补上此前被拦截没写进去的三条铁律。
+- 改动：
+  - 铁律 10/11/12：更新检查静默、ffmpeg 版本钉死、许可证随包分发。
+  - 修正过期数据：单测 140→152、ffmpeg 版本号写明、体积补实测值、
+    `bundle.resources` 说明补两份许可证文件。
+  - 删除失效条目「cargo fmt 会把 CRLF 改成 LF」：`.gitattributes` 已统一 LF，
+    该问题不存在。换成 `.gitattributes` 与 ps1 的 BOM 约束。
+  - 新增「分支模型」一节，指向 `docs/RELEASING.md`。
+  - 模块导航补 `version.rs`、`api.ts`、`update-check.ts`。
+  - 已知约束补两条实测踩到的：撞 WebView2 目录要连 `msedgewebview2.exe` 一起杀、
+    CDP 端口在设了 `HTTP_PROXY` 时要用 `--noproxy`。
+- 验证：`cargo test --lib` 152 passed（与文档数字一致）；rustc 1.99.0、
+  tauri 2.12.5、fluent 组件 18 个均对照源码核实；grep 确认无凭据泄露。
+  纯文档改动，未重跑 e2e 与打包。
+- 遗留：无。
+
+---
+
 ## 2026-11-12 15:55 · hermes · 许可证改英文、README 加截图、仓库转公开
 
 - 改：LICENSE.txt, README.md, docs/screenshot.png（新）
