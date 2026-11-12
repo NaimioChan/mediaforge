@@ -1,0 +1,29 @@
+# 统一行尾符。
+#
+# 背景：仓库里原本 Rust 是 CRLF、前端是 LF、Markdown 混用。
+# `cargo fmt` 输出 LF，只要文件是 CRLF，fmt 一次就会让整个文件显示成改动，
+# 进而把无关文件混进提交。统一成 LF 后这个问题消失。
+#
+# 文本文件一律 LF：跨平台一致，也不受 git 的 core.autocrlf 影响。
+* text=auto eol=lf
+
+# PowerShell 脚本保持原样，不做行尾转换。
+# fetch-ffmpeg.ps1 必须带 UTF-8 BOM，任何重写都可能破坏它。
+*.ps1 -text
+
+# 二进制：禁止任何转换。
+*.exe binary
+*.dll binary
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.icns binary
+
+# 测试固件是 ffprobe 的原始 JSON 输出，按文本处理但不再格式化。
+src-tauri/tests/fixtures/*.json text eol=lf
+
+# 锁文件：不参与 diff 统计噪音。
+package-lock.json text eol=lf -diff
