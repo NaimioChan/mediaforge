@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-11-12 17:10 · hermes · 接入 CI 测试守门
+
+- 改：.github/workflows/ci.yml（新）, CONTRIBUTING.md
+- 任务：用户问 CI 是什么、本项目有没有必要。结论是要，但只做测试守门，
+  不做打包与发版自动化（打包后的装包点验无法自动化，发版是低频判断动作）。
+- 改动：
+  - `ci.yml` 两个 job，均 `windows-latest`：
+    - `frontend`：`npm ci` → `npm run typecheck` → `npm run build`。
+    - `rust`：`dtolnay/rust-toolchain@1.99.0`（钉与本机同版本）→
+      `Swatinem/rust-cache` → ffmpeg 缓存 → 单测 / e2e / formats_sweep。
+  - ffmpeg 缓存键取 `hashFiles('scripts/fetch-ffmpeg.ps1')`，**不设 restore-keys**：
+    脚本里 autobuild tag 一改键就变，避免旧版本 ffmpeg 命中缓存后
+    让直拷表测在错的版本上，产出「绿但无效」的结果。
+  - 缓存未命中后单独一步断言 9 个文件就位并打印 `ffmpeg -version`，
+    免得失败信息是下游症状而不是「ffmpeg 没下来」。
+  - `CONTRIBUTING.md` 加「CI 跑什么」一节，写明 CI 不打包不发版。
+  - 未改 `AGENTS.md`：按约定它只在建立时写，CI 说明归 CONTRIBUTING。
+- 验证：
+  - 本地基线：`cargo test` 全绿（152 + 11 + 8，17 秒）；
+    `cargo fmt --check` 与 `clippy --all-targets` 均零输出；
+    `npx tsc --noEmit`、`npm run build` 通过。
+  - 实验确认 `dist/` 缺失不影响 `cargo test --lib`（移走 dist 重跑，152 passed），
+    因此 rust job 不必先跑前端构建。
+  - workflow 用 `yaml.safe_load` 解析通过；action 版本对照 GitHub API 确认存在
+    （checkout v7 / setup-node v7 / cache v6 / rust-cache v2 / rust-toolchain 1.99.0 分支）。
+  - **未在 GitHub 上真跑过**：首次 push 后的 run 结果见下一条记录。
+- 遗留：
+  - 首次 Actions 运行结果待确认。若 `formats_sweep` 在 CI 上因编码器差异
+    或超时失败，需要单独看日志（本地 7.8 秒，超时设 30 分钟，余量充足）。
+  - ffmpeg 缓存首次要下载 181 MB，冷启动那次 rust job 会明显慢于后续。
+
+---
+
 ## 2026-11-12 16:20 · hermes · 更新 AGENTS.md 至当前状态
 
 - 改：AGENTS.md

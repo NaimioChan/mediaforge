@@ -20,6 +20,15 @@ npx tsc --noEmit
 cargo test --manifest-path src-tauri/Cargo.toml --test formats_sweep
 ```
 
+## CI 跑什么
+
+`.github/workflows/ci.yml` 在每次推送到 `dev` / `main` 以及向 `main` 提 PR 时，
+在一台干净的 Windows 虚拟机上重跑上面全部内容（前端类型检查与构建、
+单测、端到端、全格式扫描）。本地能过而 CI 红了，通常意味着改动依赖了
+本机才有的东西：`vendor/` 里那份 ffmpeg、全局装的工具、未提交的文件。
+
+CI 只做测试守门，不打包、不发版。发布仍按 `docs/RELEASING.md` 人工执行。
+
 ## 报告问题
 
 发 issue 时请带上三样东西，否则很难定位：
