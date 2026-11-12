@@ -10,6 +10,10 @@ import type { FormatView, ParamSpec, Settings, Snapshot, Task, TaskUpdate, Tune 
 export const api = {
   getSnapshot: () => invoke<Snapshot>("get_snapshot"),
 
+  /** 远端版本是否比当前版本新。比较逻辑在 Rust，可单测。 */
+  isVersionNewer: (latest: string, current: string) =>
+    invoke<boolean>("is_version_newer", { latest, current }),
+
   addPaths: (paths: string[]) => invoke<Task[]>("add_paths", { paths }),
 
   compatibleFormats: (taskId: number) =>

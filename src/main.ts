@@ -8,6 +8,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { api, errorText, onBatchFinished, onTaskProgress, onTaskUpdate } from "./api";
 import { initTheme } from "./fluent";
 import { store } from "./store";
+import { checkForUpdate, initUpdateButton } from "./update-check";
 import {
   getFocused,
   initTaskList,
@@ -359,6 +360,11 @@ async function boot(): Promise<void> {
     const snapshot = await api.getSnapshot();
     store.applySnapshot(snapshot);
     syncPanelFromSettings();
+
+    // 版本按钮：先按当前版本渲染，再后台查一次更新。
+    // 检查失败或仓库未公开都不在界面上留痕迹。
+    initUpdateButton(snapshot.appVersion);
+    void checkForUpdate(snapshot.appVersion);
 
     if (!snapshot.ffmpegFound) {
       store.setError("找不到 ffmpeg。请确认安装目录下存在 ffmpeg 子目录。");

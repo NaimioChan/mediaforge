@@ -31,6 +31,7 @@ pub mod progress;
 pub mod runner;
 pub mod settings;
 pub mod subtitle_text;
+pub mod version;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -102,6 +103,8 @@ pub struct Snapshot {
     pub settings: Settings,
     pub ffmpeg_found: bool,
     pub is_running: bool,
+    /// 当前应用版本，取自 Cargo.toml。界面右下角的版本按钮用它显示。
+    pub app_version: String,
 }
 
 /// 格式的界面视图。`available` 为 false 时界面置灰。
@@ -488,7 +491,18 @@ fn get_snapshot(state: State<'_, AppState>) -> Snapshot {
         settings,
         ffmpeg_found,
         is_running,
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
     }
+}
+
+/// 判断远端版本是否比当前版本新。
+///
+/// 更新检查的 HTTP 请求在前端发出（一次 GET，不值得为它引入 reqwest），
+/// 但版本比较是纯逻辑，放在 Rust 以便单测。解析失败一律返回 false：
+/// 宁可漏报一次更新，也不要在界面上提示一个来路不明的版本号。
+#[tauri::command]
+fn is_version_newer(latest: String, current: String) -> bool {
+    version::is_newer(&latest, &current)
 }
 
 /// 加一批路径入队（文件或目录）。
@@ -1150,6 +1164,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
+            is_version_newer,
             add_paths,
             compatible_formats,
             set_target,

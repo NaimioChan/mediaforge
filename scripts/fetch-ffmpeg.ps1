@@ -5,13 +5,18 @@
 #   2. 仓库同级的 mediaforge 目录（v1）
 #   3. 从官方地址下载解压
 #
+# 版本固定在 FFmpeg-Builds 的 autobuild-2026-11-10-12-39，对应
+# ffmpeg n9.0.2-48-gd4070a14ce。不要改成 `latest`：上游每天出一次构建，
+# 构建内容一变，`copy.rs` 里实测出来的直拷兼容表就可能失效。
+# 换版本要同步改这里、tauri.conf.json 的 DLL 文件名、并重测直拷矩阵。
+#
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File scripts/fetch-ffmpeg.ps1
 #   powershell -ExecutionPolicy Bypass -File scripts/fetch-ffmpeg.ps1 -From "D:\some\ffmpeg\bin"
 
 param(
     [string]$From = "",
-    [string]$Url = "https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases/download/latest/ffmpeg-n9.0-latest-win64-gpl-shared-9.0.zip"
+    [string]$Url = "https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases/download/autobuild-2026-11-10-12-39/ffmpeg-n9.0.2-48-gd4070a14ce-win64-gpl-shared-9.0.zip"
 )
 
 $ErrorActionPreference = "Stop"

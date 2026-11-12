@@ -116,6 +116,7 @@ export interface Snapshot {
   settings: Settings;
   ffmpegFound: boolean;
   isRunning: boolean;
+  appVersion: string;
 }
 
 export interface TaskUpdate {

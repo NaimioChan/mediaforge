@@ -26,7 +26,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; script-src 'self'"
+      "csp": "default-src 'self'; img-src 'self' data: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com"
     }
   },
   "bundle": {
@@ -54,7 +54,9 @@
       "../vendor/ffmpeg/bin/avformat-63.dll": "ffmpeg/avformat-63.dll",
       "../vendor/ffmpeg/bin/avutil-61.dll": "ffmpeg/avutil-61.dll",
       "../vendor/ffmpeg/bin/swresample-7.dll": "ffmpeg/swresample-7.dll",
-      "../vendor/ffmpeg/bin/swscale-10.dll": "ffmpeg/swscale-10.dll"
+      "../vendor/ffmpeg/bin/swscale-10.dll": "ffmpeg/swscale-10.dll",
+      "../vendor/ffmpeg/LICENSE.txt": "ffmpeg/LICENSE.txt",
+      "../vendor/ffmpeg/THIRD-PARTY.md": "ffmpeg/THIRD-PARTY.md"
     },
     "windows": {
       "webviewInstallMode": {

@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-11-12 13:35 · hermes · 更新检查、GPL 合规、开源文档
+
+- 改：src-tauri/src/version.rs（新）, src/update-check.ts（新）, src-tauri/src/lib.rs,
+  src/api.ts, src/types.ts, src/main.ts, index.html, src/styles.css,
+  src-tauri/tauri.conf.json, scripts/fetch-ffmpeg.ps1, README.md,
+  vendor/ffmpeg/THIRD-PARTY.md（新）, CHANGELOG.md（新）, CONTRIBUTING.md（新）,
+  docs/RELEASING.md（新）, .github/ISSUE_TEMPLATE/（新）
+- 任务：加更新检查（右下角版本按钮），补齐开源发布所需的许可证与文档。
+- 改动要点：
+  - 版本比较在 `version.rs`，按 semver 2.0 处理预发布标识，解析失败一律
+    「不构成更新」。HTTP 走前端 fetch，不为一次 GET 引入 reqwest。
+  - GPL 合规：安装包此前只列 9 个 ffmpeg 二进制，没附许可证。
+    `bundle.resources` 补 `LICENSE.txt` 与 `THIRD-PARTY.md`；后者写明
+    精确到 commit 的版本、构建变体、上游源码地址，以及本项目不链接 libav*。
+  - `fetch-ffmpeg.ps1` 的 URL 从 `latest` 钉到 `autobuild-2026-11-10-12-39`。
+- 验证：
+  - 单测 152 全绿（新增 9 条版本比较）；e2e 11；formats_sweep 8；tsc 通过。
+  - `npm run tauri build` 出 53.51 MiB 包；静默安装后 `ffmpeg/` 目录含
+    `LICENSE.txt` 与 `THIRD-PARTY.md`。
+  - 安装版 CDP 验：origin=`tauri.localhost`、版本按钮显示 v2.0.0、
+    GitHub API 请求被 CSP 放行（404 因仓库未建，正是静默路径）。
+  - 有更新路径另验：临时指向 ripgrep 仓库，按钮变「可更新 15.2.0」并带 has-update。
+- 遗留：
+  - **想改 `AGENTS.md` 但被受保护文件拦截**（审批超时）。要补两条铁律：
+    ① 更新检查失败必须静默、版本比较解析失败不构成更新；
+    ② ffmpeg 版本钉死在 `fetch-ffmpeg.ps1`，不得用 `latest`。
+    现状：文档里没有这两条，代码已按此实现。
+  - 安装包未做代码签名，README 已写明 SmartScreen 的处理方式。
+  - GitHub 私有仓待建（用户要求先私有，review 文档后再转公开）。
+
+---
+
 ## 2026-11-12 12:56 · hermes · 输出目录改为可手输且不跨会话记忆
 
 - 改：index.html, src/main.ts, src-tauri/src/settings.rs, src-tauri/src/lib.rs, docs/DESIGN.md

@@ -405,12 +405,40 @@ input[type="range"] {
 .statusbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 6px 16px;
   font-size: 12px;
   color: var(--colorNeutralForeground3, #616161);
   border-top: 1px solid var(--colorNeutralStroke2, #e5e5e5);
   background: var(--colorNeutralBackground2, #fafafa);
+}
+
+/* 版本按钮贴在状态栏右端。默认与普通文字无异，只有发现新版本时才变色。 */
+.version-button {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--mf-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.version-button:hover {
+  border-color: var(--colorNeutralStroke1, #d1d1d1);
+  color: var(--colorNeutralForeground1, #242424);
+}
+
+.version-button:focus-visible {
+  outline: 2px solid var(--colorBrandStroke1, #0f6cbd);
+  outline-offset: 1px;
+}
+
+.version-button.has-update {
+  border-color: var(--colorBrandStroke1, #0f6cbd);
+  color: var(--colorBrandForeground1, #0f6cbd);
+  font-weight: 600;
 }
 
 /* ---------- 拖放提示层 ---------- */
