@@ -24,7 +24,6 @@ pub struct Settings {
     pub audio_bitrate_kbps: u32,
     pub max_height: Option<u32>,
     pub strip_metadata: bool,
-    pub copy_streams: bool,
     /// 记住上次选的目录（对话框起点）。
     pub last_input_dir: String,
 }
@@ -39,7 +38,6 @@ impl Default for Settings {
             audio_bitrate_kbps: 192,
             max_height: None,
             strip_metadata: false,
-            copy_streams: false,
             last_input_dir: String::new(),
         }
     }
@@ -47,18 +45,23 @@ impl Default for Settings {
 
 impl Settings {
     /// 转成参数构建器要的形态。
+    ///
+    /// 注意 `copy_streams` 恒为 false：直拷是任务级的意图，
+    /// 由每条任务的参数面板决定，不再是一个全局开关。
+    /// 全局开关曾经让「mp3 转 flac」这类正常操作全部失败。
     pub fn to_options(&self) -> Options {
         Options {
             quality: self.quality.min(100),
             audio_bitrate_kbps: Some(self.audio_bitrate_kbps),
             max_width: None,
             max_height: self.max_height,
-            copy_streams: self.copy_streams,
+            copy_streams: false,
             strip_metadata: self.strip_metadata,
             video_encoder_override: None,
             audio_encoder_override: None,
             gif_fps: 12,
             gif_max_width: 480,
+            tune: crate::params::Tune::default(),
         }
     }
 

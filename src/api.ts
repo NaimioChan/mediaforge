@@ -5,7 +5,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { FormatView, Settings, Snapshot, Task, TaskUpdate } from "./types";
+import type { FormatView, ParamSpec, Settings, Snapshot, Task, TaskUpdate, Tune } from "./types";
 
 export const api = {
   getSnapshot: () => invoke<Snapshot>("get_snapshot"),
@@ -20,6 +20,12 @@ export const api = {
 
   setTargetBulk: (taskIds: number[], formatId: string) =>
     invoke<Task[]>("set_target_bulk", { taskIds, formatId }),
+
+  /** 某个格式的可调参数规格，界面据此渲染面板。 */
+  paramSpecs: (formatId: string) => invoke<ParamSpec[]>("param_specs", { formatId }),
+
+  /** 提交任务级参数细调，返回裁剪后的任务。 */
+  setTune: (taskId: number, tune: Tune) => invoke<Task>("set_tune", { taskId, tune }),
 
   removeTasks: (taskIds: number[]) => invoke<number[]>("remove_tasks", { taskIds }),
 

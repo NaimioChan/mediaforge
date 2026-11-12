@@ -93,6 +93,11 @@ body {
   pointer-events: none;
 }
 
+/* display: grid 会盖掉 [hidden] 的默认 display: none，必须显式声明。 */
+.empty-state[hidden] {
+  display: none;
+}
+
 .empty-title {
   margin: 0;
   font-size: 17px;
@@ -295,6 +300,49 @@ input[type="range"] {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* ---------- 动态参数区 ---------- */
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--colorNeutralForeground3, #616161);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-target {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground1, #1b1b1b);
+}
+
+.param-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.param-group-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--colorNeutralForeground3, #616161);
+  text-transform: uppercase;
 }
 
 .field {

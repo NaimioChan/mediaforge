@@ -14,6 +14,12 @@ import {
   setFocused,
   syncTaskList,
 } from "./views/task-list";
+import {
+  bindPanel,
+  initPanelEvents,
+  invalidateSpecs,
+  refreshPanelFor,
+} from "./views/param-panel";
 import type { Settings } from "./types";
 
 initTheme();
@@ -127,6 +133,11 @@ function initTaskListCallbacks(): void {
         try {
           const task = await api.setTarget(taskId, formatId);
           store.patchTask(taskId, task);
+          // 目标格式变了，面板的规格也变了。
+          invalidateSpecs(formatId);
+          if (getFocused() === taskId) {
+            await refreshPanelFor(task);
+          }
         } catch (error) {
           store.setError(errorText(error));
         }
@@ -137,13 +148,20 @@ function initTaskListCallbacks(): void {
         try {
           const removed = await api.removeTasks([taskId]);
           store.removeTasks(removed);
+          if (getFocused() === taskId) {
+            setFocused(null);
+            await bindPanel(null);
+          }
         } catch (error) {
           store.setError(errorText(error));
         }
       })();
     },
     onFocus: (taskId) => {
-      setFocused(getFocused() === taskId ? null : taskId);
+      const next = getFocused() === taskId ? null : taskId;
+      setFocused(next);
+      const task = next === null ? null : (store.get().tasks.find((t) => t.id === next) ?? null);
+      void bindPanel(task);
     },
   });
 }
@@ -263,23 +281,6 @@ async function persistSettings(patch: Partial<Settings>): Promise<void> {
 function syncPanelFromSettings(): void {
   const { settings } = store.get();
 
-  const quality = document.getElementById("quality") as HTMLInputElement | null;
-  const qualityValue = document.getElementById("quality-value");
-  if (quality) quality.value = String(settings.quality);
-  if (qualityValue) qualityValue.textContent = String(settings.quality);
-
-  const bitrate = document.getElementById("audio-bitrate") as HTMLSelectElement | null;
-  if (bitrate) bitrate.value = String(settings.audioBitrateKbps);
-
-  const maxHeight = document.getElementById("max-height") as HTMLSelectElement | null;
-  if (maxHeight) maxHeight.value = settings.maxHeight ? String(settings.maxHeight) : "";
-
-  const strip = document.getElementById("strip-metadata") as HTMLInputElement | null;
-  if (strip) strip.checked = settings.stripMetadata;
-
-  const copy = document.getElementById("copy-streams") as HTMLInputElement | null;
-  if (copy) copy.checked = settings.copyStreams;
-
   const dir = document.getElementById("output-dir") as HTMLInputElement | null;
   if (dir) {
     dir.value = settings.outputDir;
@@ -287,38 +288,18 @@ function syncPanelFromSettings(): void {
   }
 }
 
+function initPanelSection(): void {
+  initPanelEvents((taskId, tune) => {
+    // 参数改动后归零该行状态；后端已把不可用字段裁掉。
+    const task = store.get().tasks.find((t) => t.id === taskId);
+    if (task) store.patchTask(taskId, { tune });
+  });
+}
+
 function initPanel(): void {
-  const quality = document.getElementById("quality") as HTMLInputElement | null;
-  const qualityValue = document.getElementById("quality-value");
-  const bitrate = document.getElementById("audio-bitrate") as HTMLSelectElement | null;
-  const maxHeight = document.getElementById("max-height") as HTMLSelectElement | null;
-  const strip = document.getElementById("strip-metadata") as HTMLInputElement | null;
-  const copy = document.getElementById("copy-streams") as HTMLInputElement | null;
-
-  // 滑块拖动时只更新显示，松手才落盘，避免一次拖动写几十次文件。
-  quality?.addEventListener("input", () => {
-    if (qualityValue) qualityValue.textContent = quality.value;
-  });
-  quality?.addEventListener("change", () => {
-    void persistSettings({ quality: Number(quality.value) });
-  });
-
-  bitrate?.addEventListener("change", () => {
-    void persistSettings({ audioBitrateKbps: Number(bitrate.value) });
-  });
-
-  maxHeight?.addEventListener("change", () => {
-    void persistSettings({
-      maxHeight: maxHeight.value ? Number(maxHeight.value) : null,
-    });
-  });
-
-  strip?.addEventListener("change", () => {
-    void persistSettings({ stripMetadata: strip.checked });
-  });
-
-  copy?.addEventListener("change", () => {
-    void persistSettings({ copyStreams: copy.checked });
+  const dir = document.getElementById("output-dir") as HTMLInputElement | null;
+  dir?.addEventListener("change", () => {
+    void persistSettings({ outputDir: dir.value });
   });
 }
 
@@ -352,6 +333,7 @@ async function boot(): Promise<void> {
   initTaskListCallbacks();
   initToolbar();
   initPanel();
+  initPanelSection();
 
   try {
     const snapshot = await api.getSnapshot();
@@ -380,6 +362,7 @@ async function boot(): Promise<void> {
   // 首次进入就同步一次，让空状态与按钮禁用正确。
   render();
   syncPanelFromSettings();
+  await bindPanel(null);
 }
 
 // 错误条接到 store 上。

@@ -25,11 +25,14 @@ npm install
 # 开发（Vite 走 1420 端口，必须 HTTP，file:// 下 ES module 会被 CORS 拦）
 npm run tauri dev
 
-# 纯单测（96 个，约 0.2 秒，不碰进程）
+# 纯单测（136 个，约 0.2 秒，不碰进程）
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 
-# 端到端（11 个，真跑 ffmpeg 并回读产物，约 3 秒）
+# 端到端（11 个，真跑 ffmpeg 并回读产物，约 2 秒）
 cargo test --manifest-path src-tauri/Cargo.toml --test e2e
+
+# 全格式扫描（7 个，71 个格式 × 重编码/直拷两种模式，约 5 秒）
+cargo test --manifest-path src-tauri/Cargo.toml --test formats_sweep
 
 # 全部测试
 cargo test --manifest-path src-tauri/Cargo.toml
@@ -55,6 +58,11 @@ npm run tauri build
 5. **取消要清理残片。** `runner::run_ffmpeg` 的中断路径必须删除本次创建的目标文件。
 6. **界面颜色一律走 Fluent 的 CSS 变量**（`var(--colorNeutral…)`），不硬编码色值。
 7. **文档与提交信息用中文。** 不口语化，不用第二人称。
+8. **直拷必须过 `copy.rs` 的兼容表。** 容器不收该码流时自动回退重编码并说明原因，
+   不得直接加 `-c copy` 让 ffmpeg 报错。表里的每一项都必须来自
+   `scripts/copy-matrix.sh` 的实测，不得凭印象写。
+9. **参数面板不写死控件。** 可调参数由 `params.rs` 按目标格式生成规格，
+   界面按规格渲染。新增参数要同时改 `ParamSpec`、`Tune` 与 `args.rs` 的消费处。
 
 ## 模块导航
 
@@ -63,6 +71,8 @@ npm run tauri build
 | `src-tauri/src/formats.rs` | 71 个格式定义 | 纯数据 |
 | `src-tauri/src/args.rs` | 参数构建 | 纯函数 |
 | `src-tauri/src/compat.rs` | 跨类型兼容矩阵 | 纯函数 |
+| `src-tauri/src/copy.rs` | 容器×码流直拷兼容表（全部实测） | 纯数据 |
+| `src-tauri/src/params.rs` | 格式参数规格与任务级细调 | 纯函数 |
 | `src-tauri/src/progress.rs` | `-progress` 解析 | 纯函数 |
 | `src-tauri/src/caps.rs` | 能力清单解析 | 纯函数 |
 | `src-tauri/src/probe.rs` | ffprobe 输出解析 | 纯函数 |
@@ -73,9 +83,13 @@ npm run tauri build
 | `src-tauri/src/runner.rs` | 子进程、进度、取消 | 有 IO |
 | `src-tauri/src/lib.rs` | 命令、状态、事件 | 装配层 |
 | `src-tauri/tests/e2e.rs` | 11 个真实转换测试 | 端到端 |
+| `src-tauri/tests/formats_sweep.rs` | 71 个格式 × 重编码/直拷扫描 | 端到端 |
 | `src/store.ts` | 前端单一状态容器 | 视图 |
 | `src/fluent.ts` | 组件注册与主题切换 | 视图 |
 | `src/views/task-list.ts` | 任务列表（按 id 增量更新） | 视图 |
+| `src/views/param-panel.ts` | 按规格动态渲染参数面板 | 视图 |
+| `scripts/copy-matrix.sh` | 实测容器×码流直拷矩阵 | 工具 |
+| `scripts/check-copy-table.py` | 校验 `copy.rs` 与实测是否一致 | 工具 |
 
 更细的设计依据见 `docs/DESIGN.md`。
 
@@ -101,3 +115,13 @@ npm run tauri build
   可以用 CDP 连进 WebView2 调试。正式构建不要带这个环境变量。
 - 打包首次会下载 NSIS 3.13 与 `nsis_tauri_utils`，以及 WebView2 bootstrapper
   （`go.microsoft.com/fwlink/p/?LinkId=2124703`）。三者都需要网络，且后者最大。
+- **直拷兼容表换 ffmpeg 版本后必须重测。** 表里每一项来自
+  `scripts/copy-matrix.sh` 的实测，用真实容器造每种编码器的源
+  （`-f nut` 中转会丢 extradata，造出假阴性）。测完跑
+  `python scripts/check-copy-table.py <matrix.tsv>` 校验，必须「严重 0 项」。
+- **wavpack 对输入帧长敏感。** 从 mp3 这类非 4096 帧长的流直接编码会报
+  `invalid block size` 并产出 0 字节，参数里必须带 `-af asetnsamples=n=4096`。
+- **webm / ogg 要求音视频成套。** 只检查音轨够不够是不够的：
+  H.264 视频 + Opus 音轨进 webm 仍会报错，判定时必须同时看视频码流。
+- **`display: grid` 会盖掉 `[hidden]`。** 类选择器优先级高于属性选择器，
+  绝对定位的空状态要显式写 `.x[hidden] { display: none }`。

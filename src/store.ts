@@ -35,7 +35,6 @@ const defaultSettings: Settings = {
   audioBitrateKbps: 192,
   maxHeight: null,
   stripMetadata: false,
-  copyStreams: false,
   lastInputDir: "",
 };
 

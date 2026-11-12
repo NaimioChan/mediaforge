@@ -37,46 +37,8 @@
 
         <aside class="panel" id="panel">
           <h2 class="panel-title">转换参数</h2>
-
-          <div class="field">
-            <label class="field-label" for="quality">
-              质量 <span class="field-value" id="quality-value">80</span>
-            </label>
-            <input type="range" id="quality" min="0" max="100" step="1" value="80" />
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="audio-bitrate">音频码率</label>
-            <select id="audio-bitrate" class="select">
-              <option value="64">64 kbps</option>
-              <option value="96">96 kbps</option>
-              <option value="128">128 kbps</option>
-              <option value="192" selected>192 kbps</option>
-              <option value="256">256 kbps</option>
-              <option value="320">320 kbps</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="max-height">分辨率上限</label>
-            <select id="max-height" class="select">
-              <option value="">不限制</option>
-              <option value="2160">2160p</option>
-              <option value="1440">1440p</option>
-              <option value="1080">1080p</option>
-              <option value="720">720p</option>
-              <option value="480">480p</option>
-            </select>
-          </div>
-
-          <div class="field field-row">
-            <label class="field-label" for="strip-metadata">剥离元数据</label>
-            <input type="checkbox" id="strip-metadata" />
-          </div>
-
-          <div class="field field-row">
-            <label class="field-label" for="copy-streams">码流直拷</label>
-            <input type="checkbox" id="copy-streams" />
+          <div class="panel-body" id="panel-body">
+            <p class="panel-empty">选中一条任务后可调参数</p>
           </div>
 
           <fluent-divider></fluent-divider>

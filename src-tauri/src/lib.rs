@@ -21,8 +21,10 @@
 pub mod args;
 pub mod caps;
 pub mod compat;
+pub mod copy;
 pub mod formats;
 pub mod output_path;
+pub mod params;
 pub mod paths;
 pub mod probe;
 pub mod progress;
@@ -86,6 +88,8 @@ pub struct Task {
     pub message: String,
     /// 自动降级等提示。
     pub notice: String,
+    /// 这条任务的参数细调。切换目标格式时会被裁剪成该格式认识的部分。
+    pub tune: crate::params::Tune,
 }
 
 /// 给前端的完整快照。
@@ -238,9 +242,10 @@ fn default_target_for(kind: Kind, caps: &caps::Caps) -> &'static str {
 
     for id in preferred {
         if let Some(f) = formats::by_id(id)
-            && format_availability(f, caps).0 {
-                return f.id;
-            }
+            && format_availability(f, caps).0
+        {
+            return f.id;
+        }
     }
 
     // 全部不可用时退回该类别的第一个格式，让用户看到并自行改。
@@ -282,6 +287,7 @@ fn make_task(id: u64, source_path: String, probe: &Probe, caps: &caps::Caps) -> 
         output_size: 0,
         message,
         notice: String::new(),
+        tune: crate::params::Tune::default(),
     }
 }
 
@@ -570,17 +576,18 @@ fn add_paths(paths: Vec<String>, state: State<'_, AppState>) -> Result<Vec<Task>
 
     // 部分文件被跳过时，挂在最后一条任务上提示。
     if !failures.is_empty()
-        && let Some(last) = created.last() {
-            let id = last.id;
-            let notice = format!("{} 个文件被跳过", failures.len());
-            let mut inner = lock(&state.inner);
-            if let Some(stored) = inner.tasks.iter_mut().find(|t| t.id == id) {
-                stored.notice = notice.clone();
-            }
-            if let Some(returned) = created.last_mut() {
-                returned.notice = notice;
-            }
+        && let Some(last) = created.last()
+    {
+        let id = last.id;
+        let notice = format!("{} 个文件被跳过", failures.len());
+        let mut inner = lock(&state.inner);
+        if let Some(stored) = inner.tasks.iter_mut().find(|t| t.id == id) {
+            stored.notice = notice.clone();
         }
+        if let Some(returned) = created.last_mut() {
+            returned.notice = notice;
+        }
+    }
 
     Ok(created)
 }
@@ -648,6 +655,50 @@ fn set_target(task_id: u64, format_id: String, state: State<'_, AppState>) -> Re
 
     task.target_format = format_id;
     revalidate(task, target, &caps);
+    // 新格式可能不认识旧参数（例如从 MP4 切到 FLAC 时残留的视频编码器），
+    // 切完立刻裁掉，避免面板显示不存在的选项。
+    task.tune = task.tune.clone().sanitize(target, &caps);
+    Ok(task.clone())
+}
+
+/// 某个格式的可调参数规格。界面据此动态渲染面板。
+#[tauri::command]
+fn param_specs(
+    format_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<params::ParamSpec>, String> {
+    let target = formats::by_id(&format_id).ok_or_else(|| format!("未知格式 {format_id}"))?;
+    let caps = lock(&state.caps).clone().unwrap_or_default();
+    Ok(params::specs_for(target, &caps))
+}
+
+/// 改某条任务的参数细调。返回裁剪后的任务，界面据此刷新面板。
+#[tauri::command]
+fn set_tune(task_id: u64, tune: params::Tune, state: State<'_, AppState>) -> Result<Task, String> {
+    let caps = lock(&state.caps).clone().unwrap_or_default();
+    let mut inner = lock(&state.inner);
+    let task = inner
+        .tasks
+        .iter_mut()
+        .find(|t| t.id == task_id)
+        .ok_or_else(|| format!("任务 {task_id} 不存在"))?;
+
+    if task.status == TaskStatus::Running {
+        return Err("该任务正在转换，无法改参数".into());
+    }
+
+    let Some(target) = formats::by_id(&task.target_format) else {
+        return Err("未知目标格式".into());
+    };
+
+    task.tune = tune.sanitize(target, &caps);
+    // 参数变了，上一次的产物与提示都作废。
+    task.output_path.clear();
+    task.output_size = 0;
+    task.notice.clear();
+    if task.status != TaskStatus::Incompatible {
+        task.status = TaskStatus::Pending;
+    }
     Ok(task.clone())
 }
 
@@ -673,6 +724,7 @@ fn set_target_bulk(
         }
         task.target_format = format_id.clone();
         revalidate(task, target, &caps);
+        task.tune = task.tune.clone().sanitize(target, &caps);
         updated.push(task.clone());
     }
 
@@ -953,11 +1005,14 @@ fn prepare(
     let guard = lock(inner);
     let task = guard.tasks.iter().find(|t| t.id == id)?;
     let probe = guard.probes.get(&id)?.clone();
+    // 任务的细调覆盖全局默认值，两者合成后才交给参数构建。
+    let mut options = guard.settings.to_options();
+    options.tune = task.tune.clone();
     Some((
         task.source_path.clone(),
         task.target_format.clone(),
         probe,
-        guard.settings.to_options(),
+        options,
         guard.settings.output_dir.clone(),
         guard.settings.overwrite_existing,
     ))
@@ -1084,6 +1139,8 @@ pub fn run() {
             compatible_formats,
             set_target,
             set_target_bulk,
+            param_specs,
+            set_tune,
             remove_tasks,
             clear_tasks,
             save_settings,
@@ -1097,7 +1154,7 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::formats::{by_id, FORMATS};
+    use crate::formats::{FORMATS, by_id};
 
     fn caps() -> caps::Caps {
         let enc = include_str!("../tests/fixtures/encoders_full.txt");
@@ -1166,6 +1223,7 @@ mod tests {
             output_size: 0,
             message: String::new(),
             notice: String::new(),
+            tune: crate::params::Tune::default(),
         }
     }
 
@@ -1186,7 +1244,11 @@ mod tests {
         task.speed = Some(2.0);
 
         revalidate(&mut task, by_id("mp3").unwrap(), &c);
-        assert_eq!(task.status, TaskStatus::Pending, "跑完的任务改格式后应可重跑");
+        assert_eq!(
+            task.status,
+            TaskStatus::Pending,
+            "跑完的任务改格式后应可重跑"
+        );
         assert_eq!(task.percent, 0.0);
         assert_eq!(task.speed, None);
     }
@@ -1236,7 +1298,11 @@ mod tests {
             4,
             Some(outdir.as_path()),
         );
-        assert_eq!(filtered.len(), 1, "排除输出目录后应只剩源文件：{filtered:?}");
+        assert_eq!(
+            filtered.len(),
+            1,
+            "排除输出目录后应只剩源文件：{filtered:?}"
+        );
         assert!(filtered[0].ends_with("a.mp4"));
 
         let _ = std::fs::remove_dir_all(&root);
