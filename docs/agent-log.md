@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-11-12 15:55 · hermes · 许可证改英文、README 加截图、仓库转公开
+
+- 改：LICENSE.txt, README.md, docs/screenshot.png（新）
+- 任务：用户要求把 LICENSE 里的说明改成英文，README「下载」标题上方加一张运行截图，
+  然后转公开。README 正文用户已在 GitHub 网页上改过，先 fetch 合并再动。
+- 改动：
+  - `LICENSE.txt` 的第三方组件说明（FFmpeg / Fluent / Tauri）全部改英文，
+    MIT 正文与版权行不动。中文行只剩版权名 `非茗 (Naimio)`。
+  - `README.md` 只在 `## 下载` 上方插入 `![MediaForge 界面](docs/screenshot.png)`，
+    用户此前在网页上的措辞修改原样保留（`git diff e2ae8cc 8e81d8c` 确认过范围）。
+  - `docs/screenshot.png`：安装版 + CDP 抓取，浅色主题。
+- 验证：
+  - 截图前先用 CDP 断言界面真实状态：rows=4、targets=[webm,flac,webp,ass]、
+    panel 显示「WebM 参数」、版本按钮 v2.0.0、无溢出（1180x760 vs 1180x760）。
+  - 转公开后匿名访问：README 200、截图 200、Release 安装包 200（56,104,579 字节）。
+  - `gh api releases/latest` 确认 tag=v2.0.0、非 draft、非 prerelease。
+- 遗留：
+  - **GitHub API 匿名限流 60 次/小时（按 IP）**。本机走 Clash 代理，出口 IP 与其他用户共享，
+    调试时被打到 `rate limit exceeded`。应用端是用户自己的 IP，正常够用；
+    但若将来发现更新检查经常静默失败，可考虑加 `ETag` 缓存或改用 `releases` 列表接口。
+  - `AGENTS.md` 仍是上一次被拦截的状态，两条铁律（更新检查静默、ffmpeg 版本钉死）未写入。
+  - 截图是浅色主题（安装版默认跟随系统）。暗色主题未出图。
+
+---
+
 ## 2026-11-12 13:35 · hermes · 更新检查、GPL 合规、开源文档
 
 - 改：src-tauri/src/version.rs（新）, src/update-check.ts（新）, src-tauri/src/lib.rs,
