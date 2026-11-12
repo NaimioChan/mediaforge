@@ -3,16 +3,26 @@
 Windows 媒体格式转换器。Tauri 2 + Rust + Vanilla TypeScript + Fluent 2，ffmpeg 随包分发。
 
 v1 是 WPF + .NET 自包含（安装包 119 MB，装完 321 MB），已归档在 `../mediaforge`。
-本仓库是重写版，体积目标是安装包约 45 MB。
+本仓库是重写版，体积目标是安装包约 45 MB；当前实际 53.5 MiB（ffmpeg 占 180.6 MB，
+压缩后约 50 MB，是体积下限），装完占 185 MB。
 
 ## 技术栈
 
 - 外壳：Tauri 2.12（WebView2）
 - 后端：Rust 1.99，MSVC 工具链
 - 前端：Vanilla TypeScript + Vite 8，无框架
-- 组件：`@fluentui/web-components` 3.2.1（选 18 个按需注册）
-- 引擎：ffmpeg n9.0.2 shared 版，9 个文件放在 `vendor/ffmpeg/bin/`
+- 组件：`@fluentui/web-components` 3.2.1（18 个按需注册，见 `src/fluent.ts`）
+- 引擎：ffmpeg n9.0.2-48-gd4070a14ce，GPL shared 版，9 个文件放在 `vendor/ffmpeg/bin/`
 - 打包：Tauri NSIS，`embedBootstrapper`
+- 发布：GitHub Releases（`NaimioChan/mediaforge`），MIT 源码 + GPL ffmpeg 二进制
+
+## 分支模型
+
+`main` 恒等于最近一次发布，`dev` 是日常开发分支。发布时把 `dev` 合到 `main`、
+打 tag、建 Release。完整流程见 `docs/RELEASING.md`，不要临时发挥。
+
+线上出严重问题时从 tag 拉 `hotfix/x.y.z`，修完直接合 `main` 发版，
+再把 `main` 合回 `dev`，避免 `dev` 上已有的改动被这版带上。
 
 ## 常用命令
 
@@ -25,7 +35,7 @@ npm install
 # 开发（Vite 走 1420 端口，必须 HTTP，file:// 下 ES module 会被 CORS 拦）
 npm run tauri dev
 
-# 纯单测（140 个，约 0.2 秒，不碰进程）
+# 纯单测（152 个，约 0.2 秒，不碰进程）
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 
 # 端到端（11 个，真跑 ffmpeg 并回读产物，约 2 秒）
@@ -63,6 +73,15 @@ npm run tauri build
    `scripts/copy-matrix.sh` 的实测，不得凭印象写。
 9. **参数面板不写死控件。** 可调参数由 `params.rs` 按目标格式生成规格，
    界面按规格渲染。新增参数要同时改 `ParamSpec`、`Tune` 与 `args.rs` 的消费处。
+10. **更新检查失败必须静默。** 断网、仓库未公开、API 限流都不许在界面上留痕迹，
+    只有真的发现更新才改版本按钮。版本比较在 `version.rs`，解析失败一律返回
+    「不构成更新」，宁可漏报也不提示来路不明的版本号。
+11. **ffmpeg 版本钉死在 `fetch-ffmpeg.ps1` 里。** 不得改成 `latest`：上游每天出构建，
+    内容一变 `copy.rs` 的直拷表就可能失效。换版本要同步改 DLL 文件名、
+    `THIRD-PARTY.md`，并重测直拷矩阵。
+12. **许可证与第三方声明必须随包分发。** 分发的 ffmpeg 是 GPL v3 构建，
+    `bundle.resources` 必须包含 `LICENSE.txt` 与 `THIRD-PARTY.md`。
+    改动这两份文件后要重新打包并确认装完在 `ffmpeg/` 目录里能看到。
 
 ## 模块导航
 
@@ -78,6 +97,7 @@ npm run tauri build
 | `src-tauri/src/probe.rs` | ffprobe 输出解析 | 纯函数 |
 | `src-tauri/src/subtitle_text.rs` | MicroDVD / SBV 写入器 | 纯函数 |
 | `src-tauri/src/output_path.rs` | 输出路径推导 | 纯函数 |
+| `src-tauri/src/version.rs` | 版本号比较（更新检查用） | 纯函数 |
 | `src-tauri/src/paths.rs` | 定位随包 ffmpeg | 有 IO |
 | `src-tauri/src/settings.rs` | 设置读写 | 有 IO |
 | `src-tauri/src/runner.rs` | 子进程、进度、取消 | 有 IO |
@@ -85,21 +105,25 @@ npm run tauri build
 | `src-tauri/tests/e2e.rs` | 11 个真实转换测试 | 端到端 |
 | `src-tauri/tests/formats_sweep.rs` | 71 个格式 × 重编码/直拷扫描 | 端到端 |
 | `src/store.ts` | 前端单一状态容器 | 视图 |
+| `src/api.ts` | `invoke` / `listen` 封装 | 视图 |
+| `src/update-check.ts` | GitHub Releases 更新检查 | 视图 |
 | `src/fluent.ts` | 组件注册与主题切换 | 视图 |
 | `src/views/task-list.ts` | 任务列表（按 id 增量更新） | 视图 |
 | `src/views/param-panel.ts` | 按规格动态渲染参数面板 | 视图 |
 | `scripts/copy-matrix.sh` | 实测容器×码流直拷矩阵 | 工具 |
 | `scripts/check-copy-table.py` | 校验 `copy.rs` 与实测是否一致 | 工具 |
 
-更细的设计依据见 `docs/DESIGN.md`。
+更细的设计依据见 `docs/DESIGN.md`，发布流程见 `docs/RELEASING.md`，
+变更记录见 `CHANGELOG.md`，第三方组件与许可证见 `vendor/ffmpeg/THIRD-PARTY.md`。
 
 ## 已知约束
 
 - `vendor/` 在 `.gitignore` 里（181 MB）。新克隆后必须跑 `fetch-ffmpeg.ps1`。
 - `fetch-ffmpeg.ps1` 必须带 UTF-8 BOM。PowerShell 5.1 读无 BOM 的 UTF-8
   会把中文注释解析错，报 `Try 语句缺少 Catch 或 Finally`。
-- `src-tauri/tauri.conf.json` 的 `bundle.resources` 逐个列出 9 个文件。
-  换 ffmpeg 版本时 DLL 名带版本号（`avcodec-63.dll` 等），必须同步改。
+- `src-tauri/tauri.conf.json` 的 `bundle.resources` 逐个列出 ffmpeg 的 9 个二进制，
+  外加 `LICENSE.txt` 与 `THIRD-PARTY.md`。换 ffmpeg 版本时 DLL 名带版本号
+  （`avcodec-63.dll` 等），必须同步改；漏了许可证文件就是违反 GPL 分发义务。
 - **换图标后必须先清构建缓存再打包。** `tauri-build` 的 `rerun-if-changed` 不覆盖 `icons/`，
   直接 `tauri build` 会得到仍带旧图标的 exe。正确顺序：
   `npx tauri icon <图>` → `rm -rf src-tauri/target/release/build/mediaforge-v2-*` → `npm run tauri build`。
@@ -135,10 +159,14 @@ npm run tauri build
   它没有注入前端资源，运行时会去连 `localhost:1420`。手工把它复制到
   安装目录会得到「页面打不开」，而不是打包好的界面。验证界面必须用
   `npm run tauri build` 的安装包，页面 origin 应为 `tauri.localhost`。
-- **同时开多个实例会撞 WebView2 用户数据目录。** 症状是
-  `failed to create webview: HRESULT(0x8007139F)`。测完先杀干净
-  `mediaforge-v2.exe` 再启动下一个，否则新实例起不来。
-- **`cargo fmt` 会把 CRLF 改成 LF。** 本仓 Rust 文件是 CRLF、前端文件是 LF，
-  直接 fmt 会让整个文件显示成改动，进而把无关文件混进提交。
-  fmt 之前先确认工作区干净，fmt 之后用 `git diff --numstat` 核对规模，
-  超出实际改动就按原行尾还原（`git show HEAD:<file>` 判断该文件原本的格式）。
+- **WebView2 撞用户数据目录时要连 `msedgewebview2.exe` 一起杀。**
+  只杀 `mediaforge-v2.exe` 不够：残留的 WebView2 子进程仍占着 profile 目录，
+  下一个实例照样报 `failed to create webview: HRESULT(0x8007139F)`。
+  用 `powershell -Command "Stop-Process -Name mediaforge-v2,msedgewebview2 -Force"`
+  一次清干净，再启动。
+- **CDP 调试端口要用 `--noproxy` 访问。** 本机设了 `HTTP_PROXY` 时，
+  `curl http://127.0.0.1:9226/json/list` 会被代理接管并返回 502。
+  必须 `curl --noproxy '*' http://127.0.0.1:<port>/json/version`。
+- **`.gitattributes` 已统一 LF，`cargo fmt` 不再制造全文件改动。**
+  该文件同时把 `*.ps1` 标成 `-text`：`fetch-ffmpeg.ps1` 依赖 UTF-8 BOM，
+  任何工具重写它都可能去掉 BOM 导致 PowerShell 5.1 解析失败。
