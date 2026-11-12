@@ -767,8 +767,23 @@ fn clear_tasks(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 /// 保存设置。
+///
+/// 输出目录可能是手输的，这里做两件事：规范化（去引号、去尾部空格与分隔符），
+/// 以及校验目录存在。不存在时直接报错，而不是等到转换开始才失败。
 #[tauri::command]
-fn save_settings(new_settings: Settings, state: State<'_, AppState>) -> Result<Settings, String> {
+fn save_settings(
+    mut new_settings: Settings,
+    state: State<'_, AppState>,
+) -> Result<Settings, String> {
+    new_settings.output_dir = settings::normalize_output_dir(&new_settings.output_dir);
+
+    if !new_settings.output_dir.is_empty() {
+        // 手输的路径可能还不存在。直接建出来，省得用户先开资源管理器建文件夹；
+        // 建不出来（盘符不存在、路径上压着文件、无权限）就当场报错。
+        std::fs::create_dir_all(&new_settings.output_dir)
+            .map_err(|e| format!("输出目录不可用：{}（{e}）", new_settings.output_dir))?;
+    }
+
     let path = {
         let mut inner = lock(&state.inner);
         inner.settings = new_settings.clone();

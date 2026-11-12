@@ -254,7 +254,13 @@ function initToolbar(): void {
   btnPickDir?.addEventListener("click", () => {
     void (async () => {
       try {
-        const picked = await open({ directory: true, multiple: false, title: "选择输出目录" });
+        const current = store.get().settings.outputDir;
+        const picked = await open({
+          directory: true,
+          multiple: false,
+          title: "选择输出目录",
+          defaultPath: current || undefined,
+        });
         if (typeof picked === "string") {
           await persistSettings({ outputDir: picked });
         }
@@ -275,6 +281,9 @@ async function persistSettings(patch: Partial<Settings>): Promise<void> {
     syncPanelFromSettings();
   } catch (error) {
     store.setError(errorText(error));
+    // 后端拒绝（例如目录不存在）时，把输入框退回上次生效的值，
+    // 免得界面上留着一个不会被采用的路径。
+    syncPanelFromSettings();
   }
 }
 
@@ -298,8 +307,19 @@ function initPanelSection(): void {
 
 function initPanel(): void {
   const dir = document.getElementById("output-dir") as HTMLInputElement | null;
-  dir?.addEventListener("change", () => {
+  if (!dir) return;
+
+  // 手输路径：离开输入框或按回车时提交。清空即回到「与源文件同目录」。
+  dir.addEventListener("change", () => {
     void persistSettings({ outputDir: dir.value });
+  });
+
+  // 回车立刻提交，不必等失焦。
+  dir.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      dir.blur();
+    }
   });
 }
 

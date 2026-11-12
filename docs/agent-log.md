@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-11-12 12:56 · hermes · 输出目录改为可手输且不跨会话记忆
+
+- 改：index.html, src/main.ts, src-tauri/src/settings.rs, src-tauri/src/lib.rs, docs/DESIGN.md
+- 任务：输出目录字段原本 `readonly` 只能靠对话框选，且会被记住。
+  按用户选择，改为可手输、只在启动时为空（同一次使用中导入新文件不清空）。
+- 改动：
+  - `index.html` 去掉 `readonly`，提示改为「可直接输入或粘贴路径」。
+  - `settings.rs` 新增 `normalize_output_dir`（去引号/空格/尾分隔符，`D:` 补 `D:\`）；
+    `load` 与 `save` 都清空 `output_dir`，`settings.json` 里恒为空串。
+    不能用 `serde(skip)`——它同时作用于 Tauri 命令反序列化，会把前端传的值一起丢掉。
+  - `lib.rs` 的 `save_settings` 先规范化再 `create_dir_all`，建不出来当场报错。
+  - `main.ts` 回车即提交；后端拒绝时输入框退回上次生效值；目录对话框带 `defaultPath`。
+- 验证：单测 143 全绿（新增 4 条盯落盘与规范化）；端到端 11 全绿；
+  全格式扫描 8 全绿；`npx tsc --noEmit` 与 `npm run build` 通过。
+- 遗留：未做安装包界面的手工点验（用户要求打包不推送，界面验收由用户进行）。
+
+---
+
 ## 2026-11-12 11:00 · hermes · 修掉码率上限，打包并安装验证
 
 **任务**：用户问是否打包了。打包后按用户真实设置复测，发现新的失败。

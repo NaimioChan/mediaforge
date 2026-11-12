@@ -150,6 +150,20 @@ ffmpeg 没有 SBV 复用器。v1 的做法是用 srt 复用器 + `.sbv` 扩展�
 `collect_media_paths_excluding` 接受输出目录并跳过它。
 有一条测试守着这个行为。
 
+### 输出目录不跨会话记忆
+
+输出目录字段只在本次会话内有效。`Settings::load` 与 `Settings::save`
+都把这个值清空，`settings.json` 里恒为空字符串，下次启动回到「与源文件同目录」。
+
+理由：记住输出目录会让用户忘记这一次到底输出到哪，而写错位置的代价
+比重新选一次大。字段本身仍参与前后端数据交换，因此不能用 `serde(skip)`，
+否则前端传上来的路径也会被一起丢掉。
+
+目录可能由用户手输，`settings::normalize_output_dir` 负责去掉
+「复制为路径」带出来的引号、首尾空格与尾部分隔符，并把 `D:` 补成 `D:\`。
+`save_settings` 随后用 `create_dir_all` 建出目录，建不出来就当场报错，
+不把失败留到转换阶段。
+
 ## 八、Fluent 2 的两个陷阱
 
 ### 主题对象不在 web-components 里
