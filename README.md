@@ -15,12 +15,17 @@ Windows 桌面媒体格式转换器。
 
 ## 下载
 
-从 [Releases](https://github.com/NaimioChan/mediaforge/releases) 下载
-`MediaForge_x.y.z_x64-setup.exe`。
+从 [Releases](https://github.com/NaimioChan/mediaforge/releases) 下载。两种分发形式：
+
+| 文件 | 说明 |
+|---|---|
+| `MediaForge_x.y.z_x64-setup.exe` | 安装包。装到 `%LOCALAPPDATA%\MediaForge`，带开始菜单项与卸载程序 |
+| `MediaForge_x.y.z_portable_x64.zip` | 便携版。解压到任意目录直接运行 `mediaforge-v2.exe`，不写注册表，不装东西 |
 
 安装包未做代码签名，首次运行 Windows SmartScreen 会拦截。点「更多信息」→「仍要运行」。
 
-系统要求：Windows 10 1809 以上或 Windows 11，x64。WebView2 运行时由安装程序按需下载。
+系统要求：Windows 10 1809 以上或 Windows 11，x64。WebView2 运行时由安装程序按需下载；
+便携版需要系统已装 WebView2（Windows 11 自带，Windows 10 一般随 Edge 已有）。
 
 ## 使用
 
@@ -58,9 +63,15 @@ npm run tauri dev
 
 # 4. 打包安装程序
 npm run tauri build
+
+# 5. 打包便携版（可选，需先完成上一步）
+powershell -ExecutionPolicy Bypass -File scripts/make-portable.ps1
 ```
 
-产物：`src-tauri/target/release/bundle/nsis/MediaForge_<version>_x64-setup.exe`
+产物：
+
+- `src-tauri/target/release/bundle/nsis/MediaForge_<version>_x64-setup.exe`
+- `src-tauri/target/release/bundle/portable/MediaForge-<version>-portable-x64.zip`
 
 `vendor/` 不进版本库（181 MB），必须靠脚本准备。脚本把 ffmpeg 版本钉在
 FFmpeg-Builds 的 `autobuild-2026-11-10-12-39`，不要改成 `latest`：上游每天出构建，

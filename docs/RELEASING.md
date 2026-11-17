@@ -92,13 +92,19 @@ npm run tauri build
 # 安装 src-tauri/target/release/bundle/nsis/MediaForge_2.1.0_x64-setup.exe
 # 启动 → 转一个文件 → 回读产物 → 卸载
 
+# 5b. 打包便携版
+powershell -ExecutionPolicy Bypass -File scripts/make-portable.ps1
+# 产物 src-tauri/target/release/bundle/portable/MediaForge-2.1.0-portable-x64.zip
+# 解压到临时目录 → 双击 exe → 确认 ffmpeg 版本与编码器数量 → 转一个文件
+
 # 6. 打 tag 并推送
 git tag -a v2.1.0 -m "v2.1.0"
 git push origin main --tags
 
-# 7. 建 GitHub Release，上传安装包，正文从 CHANGELOG 抄
+# 7. 建 GitHub Release，上传两个产物，正文从 CHANGELOG 抄
 gh release create v2.1.0 \
   "src-tauri/target/release/bundle/nsis/MediaForge_2.1.0_x64-setup.exe" \
+  "src-tauri/target/release/bundle/portable/MediaForge-2.1.0-portable-x64.zip" \
   --title "v2.1.0" --notes-file <(sed -n '/## \[2.1.0\]/,/^## \[/p' CHANGELOG.md)
 
 # 8. dev 跟上 main
