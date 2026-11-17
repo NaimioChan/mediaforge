@@ -1,6 +1,6 @@
 # MediaForge v2
 
-Windows 媒体格式转换器。Tauri 2 + Rust + Vanilla TypeScript + Fluent 2，ffmpeg 随包分发。
+Windows 媒体格式转换器。Tauri 2 + Rust + Vanilla TypeScript + Siemens iX，ffmpeg 随包分发。
 
 v1 是 WPF + .NET 自包含（安装包 119 MB，装完 321 MB），已归档在 `../mediaforge`。
 本仓库是重写版，体积目标是安装包约 45 MB；当前实际 53.5 MiB（ffmpeg 占 180.6 MB，
@@ -11,7 +11,7 @@ v1 是 WPF + .NET 自包含（安装包 119 MB，装完 321 MB），已归档在
 - 外壳：Tauri 2.12（WebView2）
 - 后端：Rust 1.99，MSVC 工具链
 - 前端：Vanilla TypeScript + Vite 8，无框架
-- 组件：`@fluentui/web-components` 3.2.1（18 个按需注册，见 `src/fluent.ts`）
+- 组件：`@siemens/ix` 5.3.0 + `@siemens/ix-icons` 3.7.1（逐个按需注册，见 `src/ix.ts`）
 - 引擎：ffmpeg n9.0.2-48-gd4070a14ce，GPL shared 版，9 个文件放在 `vendor/ffmpeg/bin/`
 - 打包：Tauri NSIS，`embedBootstrapper`
 - 发布：GitHub Releases（`NaimioChan/mediaforge`），MIT 源码 + GPL ffmpeg 二进制
@@ -66,7 +66,7 @@ npm run tauri build
 4. **不得静默产出空壳文件。** 跨类型转换先过 `compat::judge`；
    参数构建在缺流时返回 `Err` 而不是拼一条注定失败的参数表。
 5. **取消要清理残片。** `runner::run_ffmpeg` 的中断路径必须删除本次创建的目标文件。
-6. **界面颜色一律走 Fluent 的 CSS 变量**（`var(--colorNeutral…)`），不硬编码色值。
+6. **界面颜色一律走 Siemens iX 的 CSS 变量**（`var(--theme-…)`），不硬编码色值。
 7. **文档与提交信息用中文。** 不口语化，不用第二人称。
 8. **直拷必须过 `copy.rs` 的兼容表。** 容器不收该码流时自动回退重编码并说明原因，
    不得直接加 `-c copy` 让 ffmpeg 报错。表里的每一项都必须来自
@@ -107,7 +107,8 @@ npm run tauri build
 | `src/store.ts` | 前端单一状态容器 | 视图 |
 | `src/api.ts` | `invoke` / `listen` 封装 | 视图 |
 | `src/update-check.ts` | GitHub Releases 更新检查 | 视图 |
-| `src/fluent.ts` | 组件注册与主题切换 | 视图 |
+| `src/ix.ts` | iX 组件注册与主题 | 视图 |
+| `src/icons.ts` | 图标（仓库内 SVG → data URL） | 视图 |
 | `src/views/task-list.ts` | 任务列表（按 id 增量更新） | 视图 |
 | `src/views/param-panel.ts` | 按规格动态渲染参数面板 | 视图 |
 | `scripts/copy-matrix.sh` | 实测容器×码流直拷矩阵 | 工具 |
@@ -170,3 +171,22 @@ npm run tauri build
 - **`.gitattributes` 已统一 LF，`cargo fmt` 不再制造全文件改动。**
   该文件同时把 `*.ps1` 标成 `-text`：`fetch-ffmpeg.ps1` 依赖 UTF-8 BOM，
   任何工具重写它都可能去掉 BOM 导致 PowerShell 5.1 解析失败。
+- **iX 的图标要给 data URL，不能用名字。** `ix-icon` 拿到名字会拼出
+  `svg/<name>.svg` 去 fetch，该目录不在产物里，于是每个图标都回退成
+  iX 的错误符号。图标文件在 `src/assets/icons/`（MIT 副本），
+  `src/icons.ts` 拼成 `data:image/svg+xml;utf8,<原始 SVG>`：
+  不能 `encodeURIComponent`（iX 只调 `decodeURI`，`%3D` 不还原，
+  渲染成空框），也要去掉 `<?xml …?>` 声明（按 text/html 解析时是 bogus comment）。
+  静态 HTML 里的图标由 `main.ts` 的 `applyIcons()` 用属性赋值挂上，
+  不能写进属性——data URL 内含引号，会被解析器截断。
+- **不要用 `@siemens/ix/loader`。** 它把 150 多个组件全注册，产物 2.2 MB。
+  逐个 `components/ix-*.js` 的 `defineCustomElement()` 注册，产物 676 KB。
+  这些模块只导出函数、不自己调用，漏调就是一堆空标签。
+- **别在 `html` 上写 `font-size`。** iX 的尺寸全是 rem，根字号必须留在 16px；
+  写在 html 上会把控件缩到 28px 而不是 32px。字号写 `html body`——
+  iX 自带一条 `body` 规则把字体链钉成 `Siemens Sans, Arial`，
+  不加前缀中文会退到 Arial。
+- **`display: grid` 会盖掉 `[hidden]`，iX 组件的 `:host` 同理。**
+  空状态与进度条是 `ix-empty-state` / `ix-progress-indicator`，
+  它们的宿主样式优先级高于 UA 的 `[hidden] { display: none }`，
+  隐藏时必须自己写 `.x[hidden] { display: none }`。

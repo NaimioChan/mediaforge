@@ -46,12 +46,14 @@ FFmpeg is a work of the FFmpeg project. This program invokes it only as a
 separate process, does not modify its source code, and claims no rights over it.
 
 ---------------------------------------------------------------------------
-Third-party component: Microsoft Fluent 2 Web Components
+Third-party component: Siemens Industrial Experience (iX)
 ---------------------------------------------------------------------------
 
-@fluentui/web-components and @fluentui/tokens are published by Microsoft
-under the MIT license.
-https://github.com/microsoft/fluentui
+@siemens/ix and @siemens/ix-icons are published by Siemens AG under the
+MIT license. The icon SVG files copied into src/assets/icons/ also come
+from @siemens/ix-icons (MIT).
+https://github.com/siemens/ix
+https://github.com/siemens/ix-icons
 
 ---------------------------------------------------------------------------
 Third-party component: Tauri

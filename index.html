@@ -1,5 +1,13 @@
 <!doctype html>
-<html lang="zh-CN">
+<!--
+  `data-ix-theme` / `data-ix-color-schema` 写在 <html> 上，就是 iX 主题的开关：
+  `classic` 是开源版自带的那一套配色，`system` 让它跟随系统的深浅色。
+  写在标签上而不是由脚本注入，首帧拿到的就是对的配色，不会闪一下默认调色板。
+
+  图标不写在 HTML 里。iX 的图标值是 `data:image/svg+xml;utf8,<原始 SVG>`，
+  内含引号，塞进属性会被截断；由 `icons.ts` 在启动时赋给控件的 `icon` 属性。
+-->
+<html lang="zh-CN" data-ix-theme="classic" data-ix-color-schema="system">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,12 +24,12 @@
           <span class="brand-name">MediaForge</span>
         </div>
         <div class="toolbar-actions">
-          <fluent-button id="btn-add-files" appearance="accent">添加文件</fluent-button>
-          <fluent-button id="btn-add-folder">添加文件夹</fluent-button>
-          <fluent-divider orientation="vertical"></fluent-divider>
-          <fluent-button id="btn-start" appearance="accent">开始转换</fluent-button>
-          <fluent-button id="btn-cancel" disabled>取消</fluent-button>
-          <fluent-button id="btn-clear" appearance="subtle">清空</fluent-button>
+          <ix-button id="btn-add-files" variant="primary">添加文件</ix-button>
+          <ix-button id="btn-add-folder" variant="secondary">添加文件夹</ix-button>
+          <span class="toolbar-sep" role="separator"></span>
+          <ix-button id="btn-start" variant="primary">开始转换</ix-button>
+          <ix-button id="btn-cancel" variant="secondary" disabled>取消</ix-button>
+          <ix-button id="btn-clear" variant="tertiary" disabled>清空</ix-button>
         </div>
       </header>
 
@@ -29,8 +37,12 @@
       <main class="main">
         <section class="queue" id="queue">
           <div class="empty-state" id="empty-state">
-            <p class="empty-title">把文件拖进窗口</p>
-            <p class="empty-hint">支持文件与文件夹，也可以点上面的「添加文件」</p>
+            <ix-empty-state
+              id="empty-view"
+              layout="large"
+              header="把文件拖进窗口"
+              sub-header="支持文件与文件夹，也可以点上面的「添加文件」"
+            ></ix-empty-state>
           </div>
           <ul class="task-list" id="task-list"></ul>
         </section>
@@ -41,25 +53,18 @@
             <p class="panel-empty">选中一条任务后可调参数</p>
           </div>
 
-          <fluent-divider></fluent-divider>
+          <ix-divider></ix-divider>
 
           <div class="field">
             <label class="field-label" for="output-dir">输出目录</label>
             <div class="dir-row">
-              <input
-                type="text"
-                id="output-dir"
-                class="text-input"
-                placeholder="与源文件同目录"
-                spellcheck="false"
-                autocomplete="off"
-              />
-              <fluent-button id="btn-pick-dir" size="small">选择</fluent-button>
+              <ix-input id="output-dir" placeholder="与源文件同目录"></ix-input>
+              <ix-button id="btn-pick-dir" variant="secondary">选择</ix-button>
             </div>
             <p class="field-help">留空则输出到源文件旁边；可直接输入或粘贴路径</p>
           </div>
 
-          <fluent-divider></fluent-divider>
+          <ix-divider></ix-divider>
 
           <div class="status-block" id="status-block">
             <p class="status-line" id="status-ffmpeg">ffmpeg 未就绪</p>
@@ -79,6 +84,7 @@
     <!-- 拖放提示层 -->
     <div class="drop-overlay" id="drop-overlay" hidden>
       <div class="drop-card">
+        <ix-icon id="drop-icon" size="32"></ix-icon>
         <p class="drop-title">松手加入队列</p>
       </div>
     </div>

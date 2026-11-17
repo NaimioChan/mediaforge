@@ -5,6 +5,24 @@
 
 ## [未发布]
 
+## [2.1.0] - 2026-11-17
+
+界面换成西门子工业设计体系（Siemens Industrial Experience）。转换能力与
+参数行为不变，这是一次纯界面更新。
+
+### 变更
+
+- 全部控件换成 iX 的 web components：按钮、下拉、输入框、滑块、开关、
+  进度条、空状态。布局与操作位置保持原样，不需要重新熟悉
+- 配色改用 iX 的 classic 主题，跟随系统深浅色切换
+- 图标换成 iX 图标库，与控件同一套视觉语言
+- 界面字号与控件高度对齐 iX 的尺寸标度，按钮与输入框统一为 32px 高
+
+### 已知问题
+
+- 界面没有提供主题切换开关，深浅色跟随 Windows 系统设置
+- 前端资源从 232 KB 增到 676 KB（iX 的样式表占 213 KB），安装包相应变大
+
 ## [2.0.0] - 2026-11-12
 
 首个公开发布版本。
@@ -26,5 +44,6 @@
 - 取消转换时删除本次创建的目标文件，不留半成品
 - 输出目录不跨会话记忆，每次启动回到「与源文件同目录」
 
-[未发布]: https://github.com/NaimioChan/mediaforge/compare/v2.0.0...HEAD
+[未发布]: https://github.com/NaimioChan/mediaforge/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/NaimioChan/mediaforge/releases/tag/v2.1.0
 [2.0.0]: https://github.com/NaimioChan/mediaforge/releases/tag/v2.0.0

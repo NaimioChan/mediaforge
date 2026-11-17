@@ -1,13 +1,23 @@
 /* MediaForge 界面样式。
  *
- * 颜色全部走 Fluent 2 的 CSS 变量（setTheme 注入），
- * 只在这里补布局与少量密度调整。
+ * 布局几何与原来一致：顶栏 / 左队列 + 右参数 / 底栏三段，任务行三段网格。
+ * 换掉的是控件与配色：控件用 Siemens iX 的 web components，颜色一律取 iX 的
+ * `--theme-*` token，这里不出现任何字面色值。这样深色/浅色切换由 iX 自己的
+ * `@media (prefers-color-scheme)` 块完成，本文件与组件一起变色。
+ *
+ * 尺寸沿用 iX 的比例：0.5rem = 8px，1rem = 16px，控件高 2rem = 32px，
+ * 正文 0.875rem = 14px，小字 0.75rem = 12px，圆角 0.125rem（控件）/ 0.25rem（面板）。
+ *
+ * 字体：Siemens Sans 是商业授权字体，本机与用户机器上都没有，不打包。
+ * 回退链与 iX 自己声明的一致（system-ui → Segoe UI → Arial），
+ * 中文再补一层 Microsoft YaHei UI。
  */
 
 :root {
-  --mf-radius: 6px;
+  --mf-font: "Siemens Sans", system-ui, "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
   --mf-gap: 12px;
-  color-scheme: light dark;
+  --mf-radius: 0.25rem;
+  --mf-radius-sm: 0.125rem;
 }
 
 * {
@@ -19,10 +29,30 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
-  font-size: 14px;
-  color: var(--colorNeutralForeground1, #1b1b1b);
-  background: var(--colorNeutralBackground1, #fff);
+}
+
+/* 字号只设在 body 上。iX 的所有尺寸都是 rem（控件高 2rem、圆角 0.125rem），
+ * 它的前提是根字号 16px；在 html 上写 font-size 会把整条 rem 标度一起缩小，
+ * 控件就比设计值矮一截。
+ *
+ * 选择器写成 `html body` 而不是 `body`：iX 自己的样式表里有一条 `body`
+ * 规则，把字体链固定成 `Siemens Sans, Siemens Sans, Arial, Helvetica`，
+ * 同特异性下后加载的那份胜出，中文于是退到 Arial。加上 `html` 前缀
+ * 把特异性抬到 (0,0,2)，中文字体才在链里。其余排版（行高、字距、
+ * `font-feature-settings`）沿用 iX 的，不重复声明。 */
+html body {
+  font-family: var(--mf-font);
+  color: var(--theme-color-std-text);
+  background: var(--theme-color-1);
+}
+
+/* iX 组件的 `:host` 里有 `display: block/flex`，作者样式优先级高于 UA 的
+ * `[hidden] { display: none }`，所以宿主元素被设成 hidden 时仍然占位。
+ * 这两条覆盖把 hidden 还原成「不显示」，与 AGENTS.md 里记的
+ * 「display: grid 会盖掉 [hidden]」是同一个坑。 */
+.empty-state[hidden],
+.task-progress[hidden] {
+  display: none;
 }
 
 .app {
@@ -38,15 +68,16 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: var(--mf-gap);
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--colorNeutralStroke2, #e5e5e5);
-  background: var(--colorNeutralBackground2, #fafafa);
+  padding: 8px 16px;
+  border-bottom: 0.0625rem solid var(--theme-color-weak-bdr);
+  background: var(--theme-color-2);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -58,14 +89,25 @@ body {
 }
 
 .brand-name {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: var(--theme-font-weight-bold);
+  color: var(--theme-color-std-text);
+  white-space: nowrap;
 }
 
 .toolbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 竖向分隔线。iX 的 `ix-divider` 只有水平一种（:host 固定 border-bottom），
+ * 竖线用一条 1px 的边，颜色仍取 token。 */
+.toolbar-sep {
+  width: 0;
+  height: 1.5rem;
+  margin: 0 4px;
+  border-left: 0.0625rem solid var(--theme-color-weak-bdr);
 }
 
 /* ---------- 主体 ---------- */
@@ -87,26 +129,13 @@ body {
   inset: 0;
   display: grid;
   place-content: center;
-  gap: 6px;
-  text-align: center;
-  color: var(--colorNeutralForeground3, #616161);
   pointer-events: none;
 }
 
-/* display: grid 会盖掉 [hidden] 的默认 display: none，必须显式声明。 */
-.empty-state[hidden] {
-  display: none;
-}
-
-.empty-title {
-  margin: 0;
-  font-size: 17px;
-  color: var(--colorNeutralForeground2, #424242);
-}
-
-.empty-hint {
-  margin: 0;
-  font-size: 13px;
+/* `ix-empty-state` 的宿主是 flex 容器，这里只需要让它居中并限个宽度，
+ * 文案本身由组件渲染（header / sub-header），字号与配色跟着 iX 走。 */
+.empty-state ix-empty-state {
+  max-width: 22rem;
 }
 
 .task-list {
@@ -129,19 +158,19 @@ body {
     "progress progress";
   gap: 4px 12px;
   padding: 10px 12px;
-  border: 1px solid var(--colorNeutralStroke2, #e5e5e5);
+  border: 0.0625rem solid var(--theme-color-weak-bdr);
   border-radius: var(--mf-radius);
-  background: var(--colorNeutralBackground1, #fff);
+  background: var(--theme-color-1);
   cursor: default;
 }
 
 .task[data-focused="true"] {
-  border-color: var(--colorBrandStroke1, #0f6cbd);
-  background: var(--colorNeutralBackground1Selected, #f0f6ff);
+  border-color: var(--theme-color-primary);
+  background: var(--theme-color-ghost--selected);
 }
 
 .task[data-status="failed"] {
-  border-color: var(--colorPaletteRedBorder1, #d13438);
+  border-color: var(--theme-color-alarm);
 }
 
 .task[data-status="incompatible"] {
@@ -150,7 +179,7 @@ body {
 }
 
 .task[data-status="running"] {
-  border-color: var(--colorBrandStroke1, #0f6cbd);
+  border-color: var(--theme-color-primary);
 }
 
 .task-main {
@@ -159,7 +188,7 @@ body {
 }
 
 .task-name {
-  font-weight: 500;
+  font-weight: var(--theme-font-weight-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -167,8 +196,8 @@ body {
 
 .task-meta {
   margin-top: 2px;
-  font-size: 12px;
-  color: var(--colorNeutralForeground3, #616161);
+  font-size: 0.75rem;
+  color: var(--theme-color-weak-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -181,107 +210,45 @@ body {
   gap: 6px;
 }
 
+/* `ix-select` 的宿主是 inline-block，会收缩到最宽选项的宽度，
+ * 于是同一行里它比旁边的图标按钮矮一截、右边空出一块。
+ * 目标格式列要由这一行的轨道决定宽度。 */
+.task-format {
+  display: block;
+  width: 13rem;
+}
+
 .task-status {
   grid-area: status;
-  font-size: 12px;
-  color: var(--colorNeutralForeground2, #424242);
+  font-size: 0.75rem;
+  color: var(--theme-color-soft-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .task[data-status="failed"] .task-status {
-  color: var(--colorPaletteRedForeground1, #c50f1f);
+  color: var(--theme-color-alarm-text);
 }
 
 .task[data-status="done"] .task-status {
-  color: var(--colorPaletteGreenForeground1, #107c10);
+  color: var(--theme-color-success);
 }
 
 .task[data-status="incompatible"] .task-status {
-  color: var(--colorNeutralForeground3, #616161);
+  color: var(--theme-color-weak-text);
 }
 
 .task-progress {
   grid-area: progress;
-  height: 3px;
+  display: block;
   margin-top: 2px;
-  border-radius: 2px;
-  background: var(--colorNeutralBackground4, #f0f0f0);
-  overflow: hidden;
 }
 
-.task-progress-fill {
-  height: 100%;
-  width: 0;
-  border-radius: 2px;
-  background: var(--colorBrandBackground, #0f6cbd);
-  transition: width 120ms linear;
-}
-
-.task[data-status="done"] .task-progress-fill {
-  background: var(--colorPaletteGreenBackground3, #107c10);
-}
-
-/* ---------- 原生控件（补齐 Fluent 未覆盖的部分） ---------- */
-
-.select,
-.text-input {
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
-  border-radius: var(--mf-radius);
-  background: var(--colorNeutralBackground1, #fff);
-  color: inherit;
-  font: inherit;
-}
-
-.select {
-  padding-right: 4px;
-}
-
-.select:focus-visible,
-.text-input:focus-visible {
-  outline: 2px solid var(--colorBrandStroke1, #0f6cbd);
-  outline-offset: 1px;
-}
-
-.task-format {
-  max-width: 210px;
-  font-size: 13px;
-}
-
-.icon-button {
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: var(--mf-radius);
-  background: transparent;
-  color: var(--colorNeutralForeground3, #616161);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.icon-button:hover:not(:disabled) {
-  background: var(--colorNeutralBackground1Hover, #f5f5f5);
-  color: var(--colorNeutralForeground1, #1b1b1b);
-}
-
-.icon-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--colorBrandBackground, #0f6cbd);
-  cursor: pointer;
-}
-
-input[type="range"] {
+/* 进度条用 iX 的 `ix-progress-indicator`（linear + xs = 2px 高）。
+ * 它默认宽 24rem，行内要拉满。 */
+.task-progress {
   width: 100%;
-  accent-color: var(--colorBrandBackground, #0f6cbd);
 }
 
 /* ---------- 右侧参数面板 ---------- */
@@ -292,14 +259,15 @@ input[type="range"] {
   gap: 14px;
   padding: 16px;
   overflow-y: auto;
-  border-left: 1px solid var(--colorNeutralStroke2, #e5e5e5);
-  background: var(--colorNeutralBackground2, #fafafa);
+  border-left: 0.0625rem solid var(--theme-color-weak-bdr);
+  background: var(--theme-color-2);
 }
 
 .panel-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: var(--theme-font-weight-bold);
+  color: var(--theme-color-std-text);
 }
 
 /* ---------- 动态参数区 ---------- */
@@ -312,8 +280,8 @@ input[type="range"] {
 
 .panel-empty {
   margin: 0;
-  font-size: 13px;
-  color: var(--colorNeutralForeground3, #616161);
+  font-size: 0.75rem;
+  color: var(--theme-color-weak-text);
 }
 
 .panel-head {
@@ -324,9 +292,9 @@ input[type="range"] {
 }
 
 .panel-target {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--colorNeutralForeground1, #1b1b1b);
+  font-size: 0.875rem;
+  font-weight: var(--theme-font-weight-bold);
+  color: var(--theme-color-std-text);
 }
 
 .param-group {
@@ -338,10 +306,10 @@ input[type="range"] {
 
 .param-group-title {
   margin: 0;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: var(--theme-font-weight-bold);
   letter-spacing: 0.04em;
-  color: var(--colorNeutralForeground3, #616161);
+  color: var(--theme-color-soft-text);
   text-transform: uppercase;
 }
 
@@ -351,46 +319,59 @@ input[type="range"] {
   gap: 6px;
 }
 
-.field-row {
-  flex-direction: row;
+/* 开关类参数：标签在左、控件在右。 */
+.field-inline {
+  display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  min-height: 2rem;
 }
 
 .field-label {
-  font-size: 13px;
-  color: var(--colorNeutralForeground2, #424242);
+  font-size: 0.75rem;
+  color: var(--theme-color-soft-text);
 }
 
 .field-value {
   margin-left: 6px;
-  font-weight: 600;
-  color: var(--colorBrandForeground1, #0f6cbd);
+  font-weight: var(--theme-font-weight-bold);
+  color: var(--theme-color-primary);
 }
 
 .field-help {
   margin: 0;
-  font-size: 12px;
-  color: var(--colorNeutralForeground3, #616161);
+  font-size: 0.75rem;
+  color: var(--theme-color-weak-text);
 }
 
 .dir-row {
   display: flex;
   gap: 6px;
+  align-items: flex-start;
 }
 
-.dir-row .text-input {
+/* `ix-input` 的宿主同样是 inline-block，要显式拉满，否则只占 placeholder 的宽度。 */
+.dir-row ix-input {
+  display: block;
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+}
+
+/* 面板里的参数控件统一占满一行。 */
+.panel-body ix-select,
+.panel-body ix-number-input,
+.panel-body ix-slider {
+  display: block;
+  width: 100%;
 }
 
 .status-block {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 12px;
-  color: var(--colorNeutralForeground3, #616161);
+  font-size: 0.75rem;
+  color: var(--theme-color-weak-text);
 }
 
 .status-line {
@@ -400,6 +381,10 @@ input[type="range"] {
   white-space: nowrap;
 }
 
+.status-line.is-error {
+  color: var(--theme-color-alarm-text);
+}
+
 /* ---------- 底部状态栏 ---------- */
 
 .statusbar {
@@ -407,18 +392,18 @@ input[type="range"] {
   align-items: center;
   gap: 12px;
   padding: 6px 16px;
-  font-size: 12px;
-  color: var(--colorNeutralForeground3, #616161);
-  border-top: 1px solid var(--colorNeutralStroke2, #e5e5e5);
-  background: var(--colorNeutralBackground2, #fafafa);
+  font-size: 0.75rem;
+  color: var(--theme-color-weak-text);
+  border-top: 0.0625rem solid var(--theme-color-weak-bdr);
+  background: var(--theme-color-2);
 }
 
 /* 版本按钮贴在状态栏右端。默认与普通文字无异，只有发现新版本时才变色。 */
 .version-button {
   margin-left: auto;
   padding: 2px 8px;
-  border: 1px solid transparent;
-  border-radius: var(--mf-radius);
+  border: 0.0625rem solid transparent;
+  border-radius: var(--mf-radius-sm);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -426,19 +411,19 @@ input[type="range"] {
 }
 
 .version-button:hover {
-  border-color: var(--colorNeutralStroke1, #d1d1d1);
-  color: var(--colorNeutralForeground1, #242424);
+  border-color: var(--theme-color-soft-bdr);
+  color: var(--theme-color-std-text);
 }
 
 .version-button:focus-visible {
-  outline: 2px solid var(--colorBrandStroke1, #0f6cbd);
+  outline: 0.125rem solid var(--theme-color-focus-bdr);
   outline-offset: 1px;
 }
 
 .version-button.has-update {
-  border-color: var(--colorBrandStroke1, #0f6cbd);
-  color: var(--colorBrandForeground1, #0f6cbd);
-  font-weight: 600;
+  border-color: var(--theme-color-primary);
+  color: var(--theme-color-primary);
+  font-weight: var(--theme-font-weight-bold);
 }
 
 /* ---------- 拖放提示层 ---------- */
@@ -448,10 +433,9 @@ input[type="range"] {
   inset: 0;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--colorBrandBackground, #0f6cbd) 12%, transparent);
-  backdrop-filter: blur(1px);
+  background: var(--theme-color-backdrop-3);
   pointer-events: none;
-  z-index: 10;
+  z-index: var(--theme-z-index-modal);
 }
 
 .drop-overlay[hidden] {
@@ -459,15 +443,31 @@ input[type="range"] {
 }
 
 .drop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   padding: 22px 32px;
-  border: 2px dashed var(--colorBrandStroke1, #0f6cbd);
-  border-radius: 10px;
-  background: var(--colorNeutralBackground1, #fff);
+  border: 0.125rem dashed var(--theme-color-primary);
+  border-radius: var(--mf-radius);
+  background: var(--theme-color-1);
+  color: var(--theme-color-primary);
 }
 
 .drop-title {
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--colorBrandForeground1, #0f6cbd);
+  font-size: 1rem;
+  font-weight: var(--theme-font-weight-bold);
+}
+
+/* 错误条由 main.ts 在运行时插到 .app 最前面。 */
+.error-bar {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  color: var(--theme-color-alarm--contrast);
+  background: var(--theme-color-alarm);
+}
+
+.error-bar[hidden] {
+  display: none;
 }

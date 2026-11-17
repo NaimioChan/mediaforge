@@ -4,7 +4,7 @@
 
 改动前先读 `AGENTS.md`。那里的铁律不是风格建议，多数是踩过之后写下的：
 `args.rs` 保持纯函数、端到端测试必须真跑、取消要清理残片、
-界面颜色一律走 Fluent 的 CSS 变量。
+界面颜色一律走 Siemens iX 的 CSS 变量。
 
 提交前跑一遍：
 
@@ -45,7 +45,7 @@ ffmpeg 版本与能力清单也会影响判断，可以附上 `ffmpeg -version` 
 - 新增格式必须同时满足三件事：`formats.rs` 里有定义、`format_availability` 通过、
   `every_format_is_available_with_real_capabilities` 测试通过。
 - 修 bug 要带一条能复现的测试。没有测试的修复会在下次以另一种形态回来。
-- 界面颜色用 Fluent 的 CSS 变量（`var(--colorNeutral…)`），不硬编码色值。
+- 界面颜色用 Siemens iX 的 CSS 变量（`var(--theme-…)`），不硬编码色值。
 - 文档与提交信息用中文，不口语化，不用第二人称。
 
 ## 提交信息
