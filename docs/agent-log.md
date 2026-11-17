@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-11-17 23:15 · hermes · 发布 v2.1.0（冷更新到 main + Release）
+
+- 改：CHANGELOG.md, README.md, docs/RELEASING.md, docs/screenshot.png,
+  scripts/make-portable.ps1（新）, 三处版本号
+- 任务：把 iX 界面改动作为 2.1.0 发布，分发安装包与便携版，更新 README 截图。
+- 改动：
+  - 版本号 2.0.0 → 2.1.0，三处同步（package.json / Cargo.toml / tauri.conf.json）。
+  - `scripts/make-portable.ps1`：便携版 = release exe + `ffmpeg/` 子目录（9 个二进制
+    + 两份许可证），压成 zip。便携版靠 `paths.rs` 第 2 条查找命中——Tauri 对未安装的
+    exe 把资源目录解析为 exe 自身目录，因此 `ffmpeg/` 放在旁边即可，不必设环境变量。
+  - 补 `ix-select` 的中文文案：iX 内置 `Select an option` 是英文常量，
+    用 `i18nSelectListHeader` / `i18nNoMatches` / `i18nPlaceholder` 覆盖。
+  - README 的下载章节改成两种分发形式的表格；RELEASING 加 5b 步与两个上传产物。
+- 验证：
+  - `npm run tauri build` → 53.56 MiB（旧版 53.41，前端涨 444 KB 但 NSIS 压缩后
+    只增 0.15 MiB）。
+  - **安装版实测**（`tauri.localhost` origin）：覆盖安装 2.0.0 → 2.1.0，
+    版本按钮 v2.1.0，ffmpeg n9.0.2，233 编码器，CSP 零违规。
+    四条真转换（mp3→flac / mp4→webm / png→webp / srt→ass）全部 done，
+    产物 ffprobe 可解析，libopus 码率夹紧提示正确出现。
+  - **便携版实测**：解压到临时目录直接运行，自己找到同目录 `ffmpeg/`，
+    mp3→ogg 转换产物 vorbis 可解析。zip 72.9 MiB，12 个文件齐全。
+  - Release 两个资产 `uploaded`；公网匿名下载两个都 200，便携版 sha256 与本地一致。
+  - main 与 dev 都在 `04c3f35`，tag `v2.1.0` 指向 main 的合并提交。
+- 遗留：无。CI 会在下次 push 时跑一遍；若 CI 因 iX 依赖失败，属新问题需另开条目。
+
+---
+
 ## 2026-11-17 22:05 · hermes · 界面改用 Siemens iX 设计体系
 
 - 改：index.html, src/styles.css, src/main.ts, src/views/task-list.ts,
