@@ -117,6 +117,12 @@ function createRow(task: Task): Row {
   select.className = "task-format";
   // iX 的 select 自带清空按钮与下拉箭头，这里只留下拉。
   select.allowClear = false;
+  // iX 的文案是英文常量（下拉列表表头、无匹配项、占位）。不覆盖的话
+  // 展开列表时会在顶部露出「Select an option」。
+  const i18n = select as unknown as Record<string, string>;
+  i18n.i18nSelectListHeader = "目标格式";
+  i18n.i18nNoMatches = "无匹配项";
+  i18n.i18nPlaceholder = "选择目标格式";
   select.addEventListener("valueChange", (event) => {
     const value = (event as CustomEvent<string | string[]>).detail;
     const id = Array.isArray(value) ? value[0] : value;

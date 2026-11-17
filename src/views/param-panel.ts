@@ -202,6 +202,11 @@ function renderField(spec: ParamSpec, task: Task): HTMLElement {
     select.id = `param-${spec.id}`;
     select.setAttribute("aria-label", spec.label);
     select.setAttribute("allow-clear", "false");
+    // iX 的文案是英文常量，覆盖掉，否则展开列表会露出英文表头与占位。
+    const i18n = select as unknown as Record<string, string>;
+    i18n.i18nSelectListHeader = spec.label;
+    i18n.i18nNoMatches = "无匹配项";
+    i18n.i18nPlaceholder = "选择";
 
     for (const choice of spec.choices) {
       const item = document.createElement("ix-select-item");
