@@ -113,7 +113,8 @@ src/
   store.ts          单一状态容器
   api.ts            invoke / listen 封装
   update-check.ts   GitHub Releases 更新检查
-  fluent.ts         组件注册与主题
+  ix.ts             组件注册与主题（iX + iX 图标）
+  icons.ts          图标（仓库内 src/assets/icons/，转 data URL）
   views/            任务列表、参数面板
 ```
 
@@ -143,7 +144,7 @@ ffmpeg 是子进程，前端刷新或重载不该丢掉正在跑的任务。
 | 组成 | 大小 |
 |---|---|
 | release exe | 3.69 MB |
-| 前端产物 | 232 KB（gzip 60 KB） |
+| 前端产物 | 676 KB（gzip 121 KB；iX 的 CSS 单独占 213 KB） |
 | ffmpeg 9 个文件 | 180.6 MB |
 | 安装包 | 53.5 MiB |
 | 安装后占用 | 185 MB |
@@ -154,8 +155,8 @@ ffmpeg 是子进程，前端刷新或重载不该丢掉正在跑的任务。
 
 | 事项 | 常见写法 | 本项目 |
 |---|---|---|
-| Fluent 主题对象 | 从 `@fluentui/web-components` 导入 `webLightTheme` | 该包只导出 `setTheme`；主题对象来自 `@fluentui/tokens` |
-| Fluent 组件注册 | `@fluentui/web-components/button.js`（README 写法） | exports 只有一级通配指向 `define.js`，必须写 `button/define.js` |
+| iX 组件注册 | `@siemens/ix/loader` 的 `defineCustomElements()` | 会把 150 多个组件全注册，产物 2.2 MB；改为逐个 `components/ix-*.js` 的 `defineCustomElement()`，296 KB |
+| iX 图标 | 给 `ix-icon` 传图标名 | 名字会拼出 `svg/<name>.svg` 去 fetch，该目录不在产物里；必须传 `data:image/svg+xml;utf8,<原始 SVG>` |
 | MicroDVD | 交给 ffmpeg | 当前 ffmpeg 构建没有该编码器，由本程序直接写文本 |
 | SBV | 用 srt 复用器 + `.sbv` 扩展名 | ffmpeg 没有 SBV 复用器；本程序按 SBV 语法自己写 |
 | ICO | `-frames:v 1 -update 1` | 还必须缩放进 256×256 并 `format=rgba`，否则写 0 字节 |

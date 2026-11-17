@@ -4,6 +4,51 @@
 
 ---
 
+## 2026-11-17 22:05 · hermes · 界面改用 Siemens iX 设计体系
+
+- 改：index.html, src/styles.css, src/main.ts, src/views/task-list.ts,
+  src/views/param-panel.ts, src/ix.ts（新）, src/icons.ts（新）,
+  src/assets/icons/（新，9 个 SVG）, src/vite-env.d.ts（新）,
+  src/fluent.ts（删）, package.json, AGENTS.md, README.md, CONTRIBUTING.md,
+  LICENSE.txt, docs/DESIGN.md
+- 任务：用西门子 iX（ix.siemens.io）重写界面，布局不变。
+  参照 mio-sound-manager 已踩过的坑。
+- 改动：
+  - 控件换 iX：`ix-button` / `ix-select` + `ix-select-item` / `ix-input` /
+    `ix-number-input` / `ix-slider` / `ix-toggle` / `ix-progress-indicator` /
+    `ix-empty-state` / `ix-icon-button` / `ix-divider`。
+    布局几何与 DOM 层次保持原样（顶栏 / 左队列 + 右参数 / 底栏，任务行三段网格）。
+  - 按需注册：不用 `@siemens/ix/loader`（会把 150+ 组件全注册，产物 2.2 MB），
+    改为逐个 `components/ix-*.js` 的 `defineCustomElement()`。
+    产物 676 KB（iX 的 CSS 独占 213 KB），gzip 121 KB。
+  - 图标从 `@siemens/ix-icons/svg/` 复制 9 个到 `src/assets/icons/`（MIT），
+    `icons.ts` 拼成 `data:image/svg+xml;utf8,<原始 SVG>`。
+  - 颜色全部改走 `--theme-*` token；`grep` 确认 `styles.css` 与 HTML 里零字面色值。
+  - 主题由 `<html data-ix-theme="classic" data-ix-color-schema="system">` 决定，
+    跟随系统深浅色，不写 matchMedia。
+  - 删掉 `src/fluent.ts` 与两个 `@fluentui/*` 依赖。
+- 验证：
+  - `npx tsc --noEmit` 通过；`npm run build` 通过。
+  - `cargo test --lib` 152 passed；`cargo test --test e2e` 11 passed。
+  - **真 Tauri 窗口**（`tauri dev` + CDP 9226）：加入 4 个真造的文件
+    （mp3/mp4/png/srt），格式下拉分别 15/20/29/7 项，
+    选中任务后面板按格式渲染（FLAC 3 项 / MP3 3 项 / GIF 动图含 toggle），
+    切格式 `set_target` 与改参数 `set_tune` 的 IPC 都走通。
+    1180×760 无溢出，根字号 16px，字体链含中文字体。
+  - 浅色/深色切换实测：`--theme-color-1` 从 #0f1619 变 #ffffff，无残留深色块。
+  - **CSP 验证**：开发模式不带 CSP，另起一个带 `tauri.conf.json` 那条 CSP 头的
+    静态服务加载 `dist/`，`securitypolicyviolation` 零条，组件全升级，
+    图标全部解析成 `<svg>`。
+  - 截图逐区域看过（顶栏 / 任务行 / 面板 / 底栏 / 空状态 / 浅色）。
+- 遗留：
+  - 安装包未重新打包，`npm run tauri build` 的体积数字（53.5 MiB）仍是旧前端。
+    前端从 232 KB 涨到 676 KB，安装包预计 +0.4 MB 左右，需要重打包确认。
+  - `docs/screenshot.png`（README 里那张）还是 Fluent 版本，要重拍。
+  - `docs/plan-2026-11-11.md` 里提到的 Fluent 未改——那是当时的计划文档，
+    属于历史记录，按约定保留原样。
+
+---
+
 ## 2026-11-12 17:06 · hermes · CI 首次运行结果（合入 main 前）
 
 - 改：docs/agent-log.md

@@ -164,25 +164,69 @@ ffmpeg 没有 SBV 复用器。v1 的做法是用 srt 复用器 + `.sbv` 扩展�
 `save_settings` 随后用 `create_dir_all` 建出目录，建不出来就当场报错，
 不把失败留到转换阶段。
 
-## 八、Fluent 2 的两个陷阱
+## 八、Siemens iX 的四个陷阱
 
-### 主题对象不在 web-components 里
+界面用 `@siemens/ix` 5.3 的 web components。布局与交互不变，控件与配色换掉。
 
-`@fluentui/web-components` 3.2.1 只导出 `setTheme`，不导出 `webLightTheme`。
-主题对象来自 `@fluentui/tokens`：
+### 8.1 CSS 与元素定义是两件事
 
-```ts
-import { setTheme } from "@fluentui/web-components/theme/index.js";
-import { webLightTheme, webDarkTheme } from "@fluentui/tokens";
-```
+`@siemens/ix/dist/siemens-ix/siemens-ix.css`（213 KB）里既有组件样式，
+也有 classic 深浅两套主题 token 块。但组件本身是 web components：
+只引 CSS 不注册元素，页面上是一堆无样式的空标签。
+元素定义要显式注册，见下一条。
 
-不调 `setTheme` 组件完全没有样式（CSS 变量不存在）。
+### 8.2 不要用 `@siemens/ix/loader`
 
-### 组件注册路径
+`defineCustomElements()` 把全部 150 多个组件一次性注册进来，
+前端产物从 232 KB 涨到 2.2 MB（gzip 317 KB）。而且它注册的是
+`ix-icon` 之外的全部元素——`ix-icon` 属于另一个包。
 
-v3.2.1 的 `exports` 只有一级通配（星号通配）指向 `define.js`，没有 `button.js`。
-README 里写的 `@fluentui/web-components/button.js` 解析失败，
-必须写 `@fluentui/web-components/button/define.js`。
+改为逐个 import `@siemens/ix/components/ix-<name>.js`，这些模块
+**只导出 `defineCustomElement` 而不自己调用**，必须显式调一遍。
+按实际用到的 11 个组件 + 3 个 shadow 内依赖注册后，产物 676 KB
+（其中 iX 的 CSS 独占 213 KB），gzip 121 KB。
+
+### 8.3 `ix-icon` 的图标必须给 data URL，不能用名字
+
+`ix-icon` 拿到名字时不是查注册表，而是拼出 `svg/<name>.svg` 去 fetch，
+那个目录不在打包产物里，于是每个按名字给的图标都 fetch 失败，
+回退成 iX 的错误符号（一个带叉的方块）。
+
+图标文件放在 `src/assets/icons/`（从 `@siemens/ix-icons/svg/` 复制，MIT），
+`icons.ts` 以 `?raw` 导入并拼成 `data:image/svg+xml;utf8,<原始 SVG>`。
+两个细节缺一不可：
+
+- **不要 `encodeURIComponent`。** iX 内部只调 `decodeURI`，它不还原 `%3D`
+  这类保留字符。编码过的 SVG 会被解析成属性字面量为 `width%3d"512px"`
+  的 `<svg>`，每条 path 丢掉 `d`，渲染出来是一个空框——看起来像
+  「图标没加载」，实际是「图标解析坏了」。
+- **去掉 `<?xml …?>` 声明。** iX 用 `DOMParser` 按 `text/html` 解析，
+  XML 声明在那里是 bogus comment，而这些图标文件大多以它开头。
+
+另外，data URL 内含引号，写进 HTML 属性会被解析器截断，
+所以静态 HTML 里的图标由 `main.ts` 的 `applyIcons()` 用属性赋值挂上去。
+
+### 8.4 别在 `html` 上写 `font-size`
+
+iX 的所有尺寸都是 `rem`（控件高 2rem、圆角 0.125rem），前提是根字号 16px。
+在 `html` 上写 `font-size: 0.875rem` 会把整条 rem 标度缩到 87.5%，
+按钮变成 28px 而不是 32px——看起来只是「有点小」，实际是标度错了。
+
+字号写在 `body` 上，且选择器要写 `html body`：iX 自己的样式表里有一条
+`body` 规则把字体链固定成 `Siemens Sans, Siemens Sans, Arial, Helvetica`，
+同特异性下后加载的胜出，中文会退到 Arial。加 `html` 前缀抬到 (0,0,2)
+才能让中文回退链生效。
+
+### 8.5 控件事件的语义与原生控件不同
+
+- `ix-select` 的选项是 `ix-select-item` 子元素（不是 `<option>`），
+  选中后抛 `valueChange`，值在 `event.detail`，多选时是数组。
+- `ix-slider` 的 `valueChange` 在拖动过程中持续抛，必须自己防抖，
+  否则一次拖动写几十次设置。
+- `ix-number-input` 每敲一个字符抛 `valueChange`；要「失焦或回车才提交」
+  得监听 `ixChange`。清空输入框要 `allowEmptyValueChange`，
+  否则抛 0 而不是「不限制」。
+- `ix-toggle` 自带 "On"/"Off" 文案，中文界面要加 `hide-text`。
 
 ## 九、体积构成（实测）
 

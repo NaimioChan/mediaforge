@@ -7,6 +7,16 @@
  *
  * 参数是任务级的：选中某条任务后调面板，改的是那一条任务的 tune。
  * 没有选中任务时面板显示提示，而不是给出一个不生效的全局设置。
+ *
+ * 控件是 iX 的 web components，事件名与语义和原生控件不同：
+ *
+ * - `ix-select` 的选项是 `ix-select-item` 子元素，值是 `value` 属性；
+ *   选中后抛 `valueChange`，值在 `event.detail`（多选时是数组）。
+ * - `ix-slider` 的 `valueChange` 在拖动过程中持续抛，落盘必须自己去抖，
+ *   否则一次拖动会写几十次设置。
+ * - `ix-number-input` 的 `valueChange` 每敲一个字符就抛一次，
+ *   要在失焦/回车时才提交的是 `ixChange`；`allowEmptyValueChange` 必须打开，
+ *   否则清空输入框会抛 0 而不是「不限制」。
  */
 
 import { api, errorText } from "../api";
@@ -24,6 +34,9 @@ let boundTaskId: number | null = null;
 let currentFormatId = "";
 
 let onChange: SpecsListener | null = null;
+
+/** 滑块拖动时的合并计时器。 */
+let sliderTimer = 0;
 
 /** 挂上「参数改动后」的回调。与 `bindPanel` 分开，避免两件事挤在一个入口。 */
 export function initPanelEvents(cb: SpecsListener): void {
@@ -44,6 +57,9 @@ export function panelTask(): number | null {
 export async function bindPanel(task: Task | null): Promise<void> {
   const root = document.getElementById("panel-body");
   if (!root) return;
+
+  // 重绘前先落一次挂起的滑块改动，否则切走就丢了。
+  flushSlider();
 
   if (!task) {
     boundTaskId = null;
@@ -103,9 +119,8 @@ function renderSpecs(root: HTMLElement, specs: ParamSpec[], task: Task): void {
   const format = store.get().formats.find((f) => f.id === task.targetFormat);
   title.textContent = format ? `${format.name} 参数` : "转换参数";
 
-  const reset = document.createElement("fluent-button");
-  reset.setAttribute("size", "small");
-  reset.setAttribute("appearance", "subtle");
+  const reset = document.createElement("ix-button");
+  reset.setAttribute("variant", "tertiary");
   reset.textContent = "恢复默认";
   reset.addEventListener("click", () => {
     void commit(task, {}, /* replace */ true);
@@ -144,22 +159,29 @@ function renderField(spec: ParamSpec, task: Task): HTMLElement {
   const current = valueOf(spec, task.tune);
 
   if (spec.kind === "toggle") {
-    wrap.classList.add("field-row");
+    // 标签与开关同一行，帮助文字另起一行。不能把帮助文字塞进同一个 flex 容器：
+    // 那会变成第三个 flex 子项，开关被挤离右边缘。
+    const inline = document.createElement("div");
+    inline.className = "field-inline";
 
     const label = document.createElement("label");
     label.className = "field-label";
     label.textContent = spec.label;
     label.htmlFor = `param-${spec.id}`;
 
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.id = `param-${spec.id}`;
-    input.checked = current === "1";
-    input.addEventListener("change", () => {
-      void commit(task, { [spec.id]: input.checked });
+    const toggle = document.createElement("ix-toggle");
+    toggle.id = `param-${spec.id}`;
+    toggle.setAttribute("aria-label", spec.label);
+    // iX 的开关自带 "On"/"Off" 文案，中文界面里显示英文不合适。
+    toggle.setAttribute("hide-text", "");
+    (toggle as HTMLElement & { checked: boolean }).checked = current === "1";
+    toggle.addEventListener("checkedChange", (event) => {
+      const checked = (event as CustomEvent<boolean>).detail;
+      void commit(task, { [spec.id]: checked });
     });
 
-    wrap.append(label, input);
+    inline.append(label, toggle);
+    wrap.append(inline);
     appendHelp(wrap, spec.help);
     return wrap;
   }
@@ -176,20 +198,25 @@ function renderField(spec: ParamSpec, task: Task): HTMLElement {
   label.append(text, valueTag);
 
   if (spec.kind === "select") {
-    if (spec.kind === "select") valueTag.textContent = "";
-    const select = document.createElement("select");
-    select.className = "select";
+    const select = document.createElement("ix-select");
     select.id = `param-${spec.id}`;
+    select.setAttribute("aria-label", spec.label);
+    select.setAttribute("allow-clear", "false");
 
     for (const choice of spec.choices) {
-      const option = document.createElement("option");
-      option.value = choice.value;
-      option.textContent = choice.label;
-      select.appendChild(option);
+      const item = document.createElement("ix-select-item");
+      item.setAttribute("value", choice.value);
+      item.setAttribute("label", choice.label);
+      select.appendChild(item);
     }
-    select.value = current === "" ? (spec.choices[0]?.value ?? "") : current;
-    select.addEventListener("change", () => {
-      void commit(task, { [spec.id]: select.value === "" ? null : select.value });
+
+    const initial = current === "" ? (spec.choices[0]?.value ?? "") : current;
+    (select as HTMLElement & { value: string }).value = initial;
+
+    select.addEventListener("valueChange", (event) => {
+      const raw = (event as CustomEvent<string | string[]>).detail;
+      const value = Array.isArray(raw) ? (raw[0] ?? "") : raw;
+      void commit(task, { [spec.id]: value === "" ? null : value });
     });
 
     wrap.append(label, select);
@@ -198,22 +225,25 @@ function renderField(spec: ParamSpec, task: Task): HTMLElement {
   }
 
   if (spec.kind === "slider") {
-    valueTag.textContent = current === "" ? spec.default : current;
+    const shown = current === "" ? spec.default : current;
+    valueTag.textContent = shown;
 
-    const slider = document.createElement("input");
-    slider.type = "range";
+    const slider = document.createElement("ix-slider");
     slider.id = `param-${spec.id}`;
-    slider.min = String(spec.min ?? 0);
-    slider.max = String(spec.max ?? 100);
-    slider.step = String(spec.step ?? 1);
-    slider.value = current === "" ? spec.default : current;
+    slider.setAttribute("aria-label", spec.label);
+    slider.setAttribute("min", String(spec.min ?? 0));
+    slider.setAttribute("max", String(spec.max ?? 100));
+    slider.setAttribute("step", String(spec.step ?? 1));
+    slider.setAttribute("value", shown);
 
-    // 拖动时只更新数字，松手才落盘，避免一次拖动写几十次。
-    slider.addEventListener("input", () => {
-      valueTag.textContent = slider.value;
-    });
-    slider.addEventListener("change", () => {
-      void commit(task, { [spec.id]: Number(slider.value) });
+    // 拖动时只更新数字，停下来才落盘。iX 的滑块在拖动过程中会持续抛
+    // `valueChange`，直接提交等于一次拖动写几十次设置。
+    slider.addEventListener("valueChange", (event) => {
+      const value = (event as CustomEvent<number>).detail;
+      valueTag.textContent = String(value);
+      pendingSlider = { task, id: spec.id, value };
+      window.clearTimeout(sliderTimer);
+      sliderTimer = window.setTimeout(flushSlider, 260);
     });
 
     wrap.append(label, slider);
@@ -222,25 +252,20 @@ function renderField(spec: ParamSpec, task: Task): HTMLElement {
   }
 
   // number：留空表示不限制。
-  const input = document.createElement("input");
-  input.type = "number";
+  const input = document.createElement("ix-number-input");
   input.id = `param-${spec.id}`;
-  input.className = "text-input";
-  input.value = current;
-  input.placeholder = `留空${spec.unit ? `（${spec.unit}）` : "不限"}`;
+  input.setAttribute("aria-label", spec.label);
+  input.setAttribute("allow-empty-value-change", "true");
+  input.setAttribute("placeholder", `留空${spec.unit ? `（${spec.unit}）` : "不限"}`);
   if (spec.unit) input.title = spec.unit;
+  if (current !== "") {
+    (input as HTMLElement & { value: number }).value = Number(current);
+  }
 
-  // 失焦或回车才提交，边打字边提交会打断输入。
-  const submit = () => {
-    const raw = input.value.trim();
-    void commit(task, { [spec.id]: raw === "" ? null : Number(raw) });
-  };
-  input.addEventListener("change", submit);
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      submit();
-    }
+  // 失焦或回车才提交（`ixChange` 就是这两个时机），边打字边提交会打断输入。
+  input.addEventListener("ixChange", (event) => {
+    const raw = (event as CustomEvent<number | undefined>).detail;
+    void commit(task, { [spec.id]: raw === undefined ? null : raw });
   });
 
   wrap.append(label, input);
@@ -254,6 +279,18 @@ function appendHelp(parent: HTMLElement, help: string): void {
   p.className = "field-help";
   p.textContent = help;
   parent.appendChild(p);
+}
+
+/** 挂起中的滑块改动，等用户停手再提交。 */
+let pendingSlider: { task: Task; id: keyof Tune; value: number } | null = null;
+
+/** 立刻提交挂起的滑块改动。面板重绘或切换任务前必须先调用。 */
+function flushSlider(): void {
+  window.clearTimeout(sliderTimer);
+  const pending = pendingSlider;
+  if (!pending) return;
+  pendingSlider = null;
+  void commit(pending.task, { [pending.id]: pending.value });
 }
 
 /** 当前值：任务里设了就显示，否则用规格给的默认值。 */

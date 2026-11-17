@@ -5,8 +5,9 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import "./ix";
 import { api, errorText, onBatchFinished, onTaskProgress, onTaskUpdate } from "./api";
-import { initTheme } from "./fluent";
+import { ICON } from "./icons";
 import { store } from "./store";
 import { checkForUpdate, initUpdateButton } from "./update-check";
 import {
@@ -23,7 +24,27 @@ import {
 } from "./views/param-panel";
 import type { Settings } from "./types";
 
-initTheme();
+// ---------- 图标 ----------
+
+/**
+ * 把 `icons.ts` 里的 data URL 挂到静态 HTML 的控件上。
+ *
+ * 不写在 index.html 的属性里：iX 的图标值是 `data:image/svg+xml;utf8,<原始 SVG>`，
+ * 内含单双引号，写进 HTML 属性会被解析器截断。属性赋值绕开了解析。
+ */
+function applyIcons(): void {
+  const set = (id: string, icon: string) => {
+    const el = document.getElementById(id);
+    if (el) (el as HTMLElement & { icon: string }).icon = icon;
+  };
+
+  set("btn-add-files", ICON.add);
+  set("btn-add-folder", ICON.addFolder);
+  set("btn-start", ICON.play);
+  set("btn-cancel", ICON.stop);
+  set("empty-view", ICON.upload);
+  set("drop-icon", ICON.upload);
+}
 
 // ---------- 渲染订阅 ----------
 
@@ -35,17 +56,15 @@ function render(): void {
   const statusCaps = document.getElementById("status-caps");
   const statusSummary = document.getElementById("status-summary");
   const statusProgress = document.getElementById("status-progress");
-  const btnStart = document.getElementById("btn-start") as HTMLButtonElement | null;
-  const btnCancel = document.getElementById("btn-cancel") as HTMLButtonElement | null;
-  const btnClear = document.getElementById("btn-clear") as HTMLButtonElement | null;
+  const btnStart = document.getElementById("btn-start") as (HTMLElement & { disabled: boolean }) | null;
+  const btnCancel = document.getElementById("btn-cancel") as (HTMLElement & { disabled: boolean }) | null;
+  const btnClear = document.getElementById("btn-clear") as (HTMLElement & { disabled: boolean }) | null;
 
   if (statusFfmpeg) {
     statusFfmpeg.textContent = state.ffmpegFound
       ? state.ffmpegVersion || "ffmpeg 已就绪"
       : "找不到 ffmpeg";
-    statusFfmpeg.style.color = state.ffmpegFound
-      ? ""
-      : "var(--colorPaletteRedForeground1, #c50f1f)";
+    statusFfmpeg.classList.toggle("is-error", !state.ffmpegFound);
   }
 
   if (statusCaps) {
@@ -288,10 +307,17 @@ async function persistSettings(patch: Partial<Settings>): Promise<void> {
   }
 }
 
+/** `ix-input` 的宿主元素：`value` 是 property，不是 attribute。 */
+type IxInput = HTMLElement & { value: string };
+
+function outputDirInput(): IxInput | null {
+  return document.getElementById("output-dir") as IxInput | null;
+}
+
 function syncPanelFromSettings(): void {
   const { settings } = store.get();
 
-  const dir = document.getElementById("output-dir") as HTMLInputElement | null;
+  const dir = outputDirInput();
   if (dir) {
     dir.value = settings.outputDir;
     dir.title = settings.outputDir || "与源文件同目录";
@@ -307,20 +333,15 @@ function initPanelSection(): void {
 }
 
 function initPanel(): void {
-  const dir = document.getElementById("output-dir") as HTMLInputElement | null;
+  const dir = outputDirInput();
   if (!dir) return;
 
   // 手输路径：离开输入框或按回车时提交。清空即回到「与源文件同目录」。
-  dir.addEventListener("change", () => {
-    void persistSettings({ outputDir: dir.value });
-  });
-
-  // 回车立刻提交，不必等失焦。
-  dir.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      dir.blur();
-    }
+  // `ix-input` 在失焦且有变化时抛 `ixChange`，回车也会抛同一个事件，
+  // 所以不需要自己监听 keydown。
+  dir.addEventListener("ixChange", (event) => {
+    const value = (event as CustomEvent<string | undefined>).detail;
+    void persistSettings({ outputDir: value ?? "" });
   });
 }
 
@@ -351,6 +372,7 @@ let errorTimer = 0;
 // ---------- 启动 ----------
 
 async function boot(): Promise<void> {
+  applyIcons();
   initTaskListCallbacks();
   initToolbar();
   initPanel();

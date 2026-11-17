@@ -4,20 +4,46 @@
  * 每条任务一行：文件名 + 源摘要 / 目标格式下拉 / 状态。
  * 重绘策略：整表重绘过于浪费（进度事件每秒几十次），
  * 因此按 id 维护 DOM 节点，事件只更新对应行的进度与状态文字。
+ *
+ * 控件是 iX 的 web components。它们的事件是 `CustomEvent`，值在 `detail` 上，
+ * 且要 `addEventListener` 挂（`on:valueChange` 是 Solid 的写法，原生 DOM 没有）。
  */
 
+import { ICON } from "../icons";
 import type { FormatView, Task } from "../types";
 import { formatLabel, kindLabel, store } from "../store";
+
+/** iX 的 `ix-select` 宿主元素。属性在运行时赋值，不需要类型声明文件。 */
+interface IxSelect extends HTMLElement {
+  value: string;
+  disabled: boolean;
+  label: string;
+  allowClear: boolean;
+}
+
+interface IxProgress extends HTMLElement {
+  value: number;
+  status: string;
+  type: string;
+  size: string;
+}
+
+interface IxIconButton extends HTMLElement {
+  icon: string;
+  variant: string;
+  size: string;
+  disabled: boolean;
+  title: string;
+}
 
 interface Row {
   root: HTMLLIElement;
   /** 目标格式下拉。 */
-  select: HTMLSelectElement;
+  select: IxSelect;
   status: HTMLElement;
-  progress: HTMLElement;
-  progressFill: HTMLElement;
+  progress: IxProgress;
   meta: HTMLElement;
-  remove: HTMLButtonElement;
+  remove: IxIconButton;
 }
 
 const rows = new Map<number, Row>();
@@ -59,7 +85,7 @@ export function syncTaskList(): void {
   for (const task of tasks) {
     let row = rows.get(task.id);
     if (!row) {
-      row = createRow(task, formats);
+      row = createRow(task);
       rows.set(task.id, row);
     }
     list.appendChild(row.root);
@@ -67,7 +93,7 @@ export function syncTaskList(): void {
   }
 }
 
-function createRow(task: Task, formats: FormatView[]): Row {
+function createRow(task: Task): Row {
   const root = document.createElement("li");
   root.className = "task";
   root.dataset.id = String(task.id);
@@ -87,16 +113,22 @@ function createRow(task: Task, formats: FormatView[]): Row {
   const controls = document.createElement("div");
   controls.className = "task-controls";
 
-  const select = document.createElement("select");
-  select.className = "select task-format";
-  select.addEventListener("change", () => {
-    callbacks?.onTargetChange(task.id, select.value);
+  const select = document.createElement("ix-select") as IxSelect;
+  select.className = "task-format";
+  // iX 的 select 自带清空按钮与下拉箭头，这里只留下拉。
+  select.allowClear = false;
+  select.addEventListener("valueChange", (event) => {
+    const value = (event as CustomEvent<string | string[]>).detail;
+    const id = Array.isArray(value) ? value[0] : value;
+    if (id) callbacks?.onTargetChange(task.id, id);
   });
 
-  const remove = document.createElement("button");
-  remove.className = "icon-button";
+  const remove = document.createElement("ix-icon-button") as IxIconButton;
+  remove.icon = ICON.trash;
+  remove.variant = "tertiary";
+  remove.size = "16";
   remove.title = "从队列移除";
-  remove.textContent = "✕";
+  remove.setAttribute("aria-label", "从队列移除");
   remove.addEventListener("click", () => {
     callbacks?.onRemove(task.id);
   });
@@ -106,22 +138,23 @@ function createRow(task: Task, formats: FormatView[]): Row {
   const status = document.createElement("div");
   status.className = "task-status";
 
-  const progress = document.createElement("div");
+  // 线性进度条，xs 是 2px 高，正好是原来那条细线的厚度。
+  const progress = document.createElement("ix-progress-indicator") as IxProgress;
   progress.className = "task-progress";
-  const progressFill = document.createElement("div");
-  progressFill.className = "task-progress-fill";
-  progress.appendChild(progressFill);
+  progress.type = "linear";
+  progress.size = "xs";
+  progress.value = 0;
 
-  const row: Row = { root, select, status, progress, progressFill, meta, remove };
+  const row: Row = { root, select, status, progress, meta, remove };
 
   root.addEventListener("click", (event) => {
     // 点下拉或删除按钮不算选中。
-    if (event.target instanceof HTMLSelectElement || event.target === remove) return;
+    const target = event.target as Node;
+    if (select.contains(target) || remove.contains(target)) return;
     callbacks?.onFocus(task.id);
   });
 
   root.append(main, controls, status, progress);
-  fillOptions(row, task, formats);
   return row;
 }
 
@@ -131,25 +164,28 @@ function fillOptions(row: Row, task: Task, formats: FormatView[]): void {
   const pool = compatible ?? formats.filter((f) => f.kind === task.sourceKind);
 
   const signature = pool.map((f) => `${f.id}:${f.available}`).join(",");
-  if (row.select.dataset.signature === signature) {
-    row.select.value = task.targetFormat;
-    return;
+  if (row.select.dataset.signature !== signature) {
+    // `ix-select` 的选项是 `ix-select-item` 子元素，不是 `<option>`。
+    // 重建整批选项时先清空，再一次性挂上去。
+    row.select.textContent = "";
+    for (const format of pool) {
+      const item = document.createElement("ix-select-item");
+      item.setAttribute("value", format.id);
+      item.setAttribute(
+        "label",
+        format.available ? `${format.name}  ${format.ext}` : `${format.name}  ${format.ext}（不可用）`,
+      );
+      if (!format.available) {
+        item.setAttribute("disabled", "");
+        item.title = format.unavailableReason;
+      } else if (format.notes) {
+        item.title = format.notes;
+      }
+      row.select.appendChild(item);
+    }
+    row.select.dataset.signature = signature;
   }
 
-  row.select.textContent = "";
-  for (const format of pool) {
-    const option = document.createElement("option");
-    option.value = format.id;
-    option.textContent = `${format.name}  ${format.ext}`;
-    if (!format.available) {
-      option.disabled = true;
-      option.textContent += "（不可用）";
-      option.title = format.unavailableReason;
-    }
-    if (format.notes) option.title = format.notes;
-    row.select.appendChild(option);
-  }
-  row.select.dataset.signature = signature;
   row.select.value = task.targetFormat;
 }
 
@@ -168,7 +204,8 @@ function updateRow(row: Row, task: Task, formats: FormatView[]): void {
 
   const showProgress = task.status === "running" || task.status === "done";
   row.progress.hidden = !showProgress;
-  row.progressFill.style.width = `${Math.max(0, Math.min(100, task.percent))}%`;
+  row.progress.value = Math.max(0, Math.min(100, task.percent));
+  row.progress.status = task.status === "done" ? "success" : "default";
 
   const locked = task.status === "running";
   row.select.disabled = locked;
