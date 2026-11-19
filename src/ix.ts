@@ -16,11 +16,11 @@
  *    的元素，必须单独注册，否则 `ix-icon` 不被升级，图标位置只有一个高度为 0
  *    的空元素——看起来像「图标没显示」，实际是「元素没定义」。
  *
- * 主题由 `<html>` 上的两个属性决定，写在 index.html 里而不是这里：
- * `data-ix-theme="classic"` + `data-ix-color-schema="system"`。
- * `system` 让 iX 自己的 `@media (prefers-color-scheme)` 块接管深浅色，
- * WebView2 会把系统设置反映成该媒体查询，因此不必自己写 matchMedia 监听，
- * 也不会出现「首帧是默认配色」的闪烁。
+ * 主题由 `<html>` 上的两个属性决定：`data-ix-theme="classic"` 打开 iX 的 token
+ * 块，`data-ix-color-schema` 决定深还是浅。具体色值由 `theme.ts` 按 Windows 11
+ * Fluent 的配色算出覆盖块写进 `<head>`，深浅色跟随系统——WebView2 会把 Windows
+ * 的应用主题反映成 `prefers-color-scheme`，不必自己读注册表。
+ * `index.html` 的 head 里有一段内联脚本先定 schema 与底色，避免首帧闪成 classic 的蓝紫。
  */
 
 import "@siemens/ix/dist/siemens-ix/siemens-ix.css";

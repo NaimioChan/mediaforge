@@ -1,6 +1,6 @@
 [package]
 name = "mediaforge-v2"
-version = "2.1.0"
+version = "2.1.1"
 description = "MediaForge — 媒体格式转换器"
 authors = ["Naimio"]
 edition = "2024"
