@@ -5,6 +5,22 @@
 
 ## [未发布]
 
+## [2.1.1] - 2026-11-19
+
+界面配色换成 Windows 11 的 Fluent 配色。转换能力与参数行为不变。
+
+### 变更
+
+- 深浅两套配色改用 Windows 11 的色值：窗口 `#202020` / `#f3f3f3`，
+  强调色 `#4cc2ff` / `#0067c0`，语义色取 WinUI 的绿、黄、红
+- 中性色阶按 Windows 的层次重排，面板与工具条只比窗口底色亮一级，
+  不再沿用西门子的间距
+- 首帧不再先画一遍 iX 默认配色再跳色
+
+### 已知问题
+
+- 界面没有主题切换开关，深浅色跟随 Windows 设置
+
 ## [2.1.0] - 2026-11-17
 
 界面换成西门子工业设计体系（Siemens Industrial Experience）。转换能力与
@@ -44,6 +60,7 @@
 - 取消转换时删除本次创建的目标文件，不留半成品
 - 输出目录不跨会话记忆，每次启动回到「与源文件同目录」
 
-[未发布]: https://github.com/NaimioChan/mediaforge/compare/v2.1.0...HEAD
+[未发布]: https://github.com/NaimioChan/mediaforge/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/NaimioChan/mediaforge/releases/tag/v2.1.1
 [2.1.0]: https://github.com/NaimioChan/mediaforge/releases/tag/v2.1.0
 [2.0.0]: https://github.com/NaimioChan/mediaforge/releases/tag/v2.0.0

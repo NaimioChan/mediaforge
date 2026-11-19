@@ -4,6 +4,40 @@
 
 ---
 
+## 2026-11-19 20:30 · hermes · 配色改 Windows 11 Fluent，发布 v2.1.1
+
+- 改：src/theme.ts（新）, src/main.ts, src/ix.ts, src/styles.css, index.html,
+  docs/DESIGN.md, docs/screenshot.png, CHANGELOG.md, scripts/make-portable.ps1,
+  AGENTS.md（模块导航加 theme.ts）, 三处版本号
+- 任务：把配色从 iX classic 换成 Windows 11 的 Fluent 配色（参考 mio-sound-manager
+  的 theme.ts 做法），然后发 2.1.1。
+- 改动：
+  - `src/theme.ts`：十色调色板推导 240 多个 `--theme-*` token，深浅两套覆盖块
+    写进一个 `<style>`，选择器 `html[data-ix-theme][data-ix-color-schema]`（0,2,1）
+    压过 iX 的（0,2,0）。切深浅是**替换**块内容而不是追加。
+  - 中性色阶单独给步长（`RAMP_DARK` / `RAMP_LIGHT`），因为 Windows 把窗口压到
+    `#202020` / `#f3f3f3`，沿 iX classic 的比例会让面板明显偏浅。
+  - `index.html` head 加内联脚本先写 schema 与窗口底色，消除首帧闪 classic 蓝紫。
+  - `scripts/make-portable.ps1` 原本**没有 UTF-8 BOM**，PowerShell 5.1 把含中文的
+    `Copy-Item ... LICENSE.txt` 行整条丢弃，2.1.0 的便携版 zip 就少了 LICENSE.txt
+    （GPL 分发义务缺件，当时没发现）。补 BOM 后 12 个文件齐全。
+- 验证：
+  - `npx tsc --noEmit`、`npm run build` 通过；`cargo test` 全绿（152 + 11 e2e + 8 sweep）。
+  - CDP 模拟浅色/深色：body `#202020`/`#f3f3f3`，工具条与面板 `#2d2d2d`/`#e7e7e7`，
+    主按钮 `#4cc2ff`/`#0067c0`，文字 0.94 alpha，无溢出（1180×760）。
+  - 安装版实测（`tauri.localhost`）：覆盖安装后版本按钮 v2.1.1，ffmpeg n9.0.2，
+    233 编码器 / 184 复用器。四条真转换 mp4→webm、png→webp、mp3→flac、srt→ass
+    全部 done，ffprobe 回读 vp9+opus / webp / flac / ass，libopus 夹紧提示正确。
+  - 便携版：解压到临时目录直接运行，自己找到同目录 ffmpeg，界面与安装版一致。
+    zip 12 个文件，许可证两份都在。
+  - `MediaForge_2.1.1_x64-setup.exe` 53.56 MiB，portable zip 72.92 MiB。
+- 遗留：
+  - AGENTS.md 的「BOM」一条想补上 `make-portable.ps1`，写入被保护门禁拦下
+    （需用户确认），当前只补了模块导航一行。
+  - 截图沿用浅色，暗色未出图（与 2.1.0 相同）。
+
+---
+
 ## 2026-11-17 23:15 · hermes · 发布 v2.1.0（冷更新到 main + Release）
 
 - 改：CHANGELOG.md, README.md, docs/RELEASING.md, docs/screenshot.png,

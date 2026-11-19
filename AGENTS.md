@@ -108,6 +108,7 @@ npm run tauri build
 | `src/api.ts` | `invoke` / `listen` 封装 | 视图 |
 | `src/update-check.ts` | GitHub Releases 更新检查 | 视图 |
 | `src/ix.ts` | iX 组件注册与主题 | 视图 |
+| `src/theme.ts` | Windows 11 配色 token 推导 | 视图 |
 | `src/icons.ts` | 图标（仓库内 SVG → data URL） | 视图 |
 | `src/views/task-list.ts` | 任务列表（按 id 增量更新） | 视图 |
 | `src/views/param-panel.ts` | 按规格动态渲染参数面板 | 视图 |

@@ -2,8 +2,8 @@
  *
  * 布局几何与原来一致：顶栏 / 左队列 + 右参数 / 底栏三段，任务行三段网格。
  * 换掉的是控件与配色：控件用 Siemens iX 的 web components，颜色一律取 iX 的
- * `--theme-*` token，这里不出现任何字面色值。这样深色/浅色切换由 iX 自己的
- * `@media (prefers-color-scheme)` 块完成，本文件与组件一起变色。
+ * `--theme-*` token，这里不出现任何字面色值。深浅两套 token 由 `theme.ts`
+ * 按 Windows 11 的 Fluent 配色算出，本文件与组件一起变色。
  *
  * 尺寸沿用 iX 的比例：0.5rem = 8px，1rem = 16px，控件高 2rem = 32px，
  * 正文 0.875rem = 14px，小字 0.75rem = 12px，圆角 0.125rem（控件）/ 0.25rem（面板）。

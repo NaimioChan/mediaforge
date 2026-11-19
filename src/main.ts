@@ -9,6 +9,7 @@ import "./ix";
 import { api, errorText, onBatchFinished, onTaskProgress, onTaskUpdate } from "./api";
 import { ICON } from "./icons";
 import { store } from "./store";
+import { initTheme } from "./theme";
 import { checkForUpdate, initUpdateButton } from "./update-check";
 import {
   getFocused,
@@ -424,4 +425,7 @@ store.subscribe(() => {
   if (!error) lastError = "";
 });
 
+// 配色先落地：首帧由 index.html 上的 `classic` + `system` 块画，
+// 这里的覆盖块紧随其后替换成 Windows 配色。
+initTheme();
 void boot();

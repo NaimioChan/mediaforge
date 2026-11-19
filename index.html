@@ -1,8 +1,13 @@
 <!doctype html>
 <!--
   `data-ix-theme` / `data-ix-color-schema` 写在 <html> 上，就是 iX 主题的开关：
-  `classic` 是开源版自带的那一套配色，`system` 让它跟随系统的深浅色。
-  写在标签上而不是由脚本注入，首帧拿到的就是对的配色，不会闪一下默认调色板。
+  `classic` 是开源版自带的那一套 token 块，深浅色由脚本解析系统设置后写死。
+
+  为什么不是直接写 `system`：iX 的 system 分支是 `@media` 包起来的 classic 配色，
+  而 Windows 配色要由 `theme.ts` 算出 token 覆盖块。若首帧仍走 classic，
+  会先闪一下西门子的蓝紫再变成 Windows 的中性灰。head 里的内联脚本在样式表
+  之前就把 schema 与窗口底色定成当前系统配色，`theme.ts` 接手时只是补上 token。
+  脚本失手时页面退回 `classic` + `system`，仍是可用配色。
 
   图标不写在 HTML 里。iX 的图标值是 `data:image/svg+xml;utf8,<原始 SVG>`，
   内含引号，塞进属性会被截断；由 `icons.ts` 在启动时赋给控件的 `icon` 属性。
@@ -12,6 +17,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MediaForge</title>
+    <script>
+      // 首帧防闪：把 schema 定成系统的深浅色，并先铺上与 Windows 窗口一致的底色。
+      // 色值与 theme.ts 里 WINDOWS_DARK / WINDOWS_LIGHT 的 bg 一样，改配色时同步。
+      try {
+        var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var root = document.documentElement;
+        root.dataset.ixColorSchema = dark ? "dark" : "light";
+        root.style.colorScheme = dark ? "dark" : "light";
+        root.style.background = dark ? "#202020" : "#f3f3f3";
+      } catch (e) {}
+    </script>
     <link rel="stylesheet" href="/src/styles.css" />
     <script type="module" src="/src/main.ts" defer></script>
   </head>
