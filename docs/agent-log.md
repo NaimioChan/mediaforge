@@ -32,9 +32,26 @@
     zip 12 个文件，许可证两份都在。
   - `MediaForge_2.1.1_x64-setup.exe` 53.56 MiB，portable zip 72.92 MiB。
 - 遗留：
-  - AGENTS.md 的「BOM」一条想补上 `make-portable.ps1`，写入被保护门禁拦下
-    （需用户确认），当前只补了模块导航一行。
   - 截图沿用浅色，暗色未出图（与 2.1.0 相同）。
+
+---
+
+## 2026-11-19 20:55 · hermes · 补齐 v2.1.1 相关文档
+
+- 改：AGENTS.md, README.md, CONTRIBUTING.md, docs/DESIGN.md
+- 任务：把 2.1.1 上手写时留下的文档缺口补齐。
+- 改动：
+  - AGENTS.md：BOM 那条从「只有 fetch-ffmpeg.ps1」扩到两个 PowerShell 脚本，
+    写清 make-portable.ps1 无 BOM 时会把含中文注释的 `Copy-Item` 整行吞掉、
+    zip 静默少 LICENSE.txt，并给出 `head -c 3 | xxd` 的复核方式；
+    铁律 6 补一句「色值只允许出现在 src/theme.ts」。
+  - README：模块清单里 ix.ts 改为只管组件注册，新增 theme.ts。
+  - CONTRIBUTING：颜色约定同步指向 theme.ts。
+  - DESIGN 第九节：体积表按 v2.1.1 实测更新（exe 3.64 MB、前端 672 KB、
+    安装包 53.56 MiB），补便携版 zip 一行与 iX 样式表占 213 KB 的说明。
+- 验证：纯文档改动，`git diff` 逐条对照代码与打包产物数字；
+  未重跑测试与打包。
+- 遗留：无。
 
 ---
 

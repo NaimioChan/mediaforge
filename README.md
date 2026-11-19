@@ -124,7 +124,8 @@ src/
   store.ts          单一状态容器
   api.ts            invoke / listen 封装
   update-check.ts   GitHub Releases 更新检查
-  ix.ts             组件注册与主题（iX + iX 图标）
+  ix.ts             组件注册（iX + iX 图标）
+  theme.ts          Windows 11 配色（推导 iX 的 --theme-* token）
   icons.ts          图标（仓库内 src/assets/icons/，转 data URL）
   views/            任务列表、参数面板
 ```

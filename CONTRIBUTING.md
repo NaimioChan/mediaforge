@@ -45,7 +45,8 @@ ffmpeg 版本与能力清单也会影响判断，可以附上 `ffmpeg -version` 
 - 新增格式必须同时满足三件事：`formats.rs` 里有定义、`format_availability` 通过、
   `every_format_is_available_with_real_capabilities` 测试通过。
 - 修 bug 要带一条能复现的测试。没有测试的修复会在下次以另一种形态回来。
-- 界面颜色用 Siemens iX 的 CSS 变量（`var(--theme-…)`），不硬编码色值。
+- 界面颜色用 iX 的 CSS 变量（`var(--theme-…)`），不硬编码色值。
+  色值只在 `src/theme.ts` 里出现，那份文件负责把它们推导成 token。
 - 文档与提交信息用中文，不口语化，不用第二人称。
 
 ## 提交信息

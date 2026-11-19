@@ -258,17 +258,21 @@ iX 的所有尺寸都是 `rem`（控件高 2rem、圆角 0.125rem），前提是
 
 | 组成 | 大小 |
 |---|---|
-| Tauri release exe | 3.69 MB |
-| 前端产物 | 231 KB（gzip 58 KB） |
+| Tauri release exe | 3.64 MB |
+| 前端产物 | 672 KB（gzip 约 138 KB） |
 | ffmpeg 9 个文件 | 180.6 MB |
-| 安装包（NSIS） | 53.41 MiB |
+| 安装包（NSIS） | 53.56 MiB |
+| 便携版 zip | 72.92 MiB |
 | 安装后占用 | 185 MB |
 
-基线里 exe 是 2.95 MB，本实现多了 0.74 MB，来自 dialog / window-state / opener 三个插件。
+基线里 exe 是 2.95 MB，本实现多了 0.69 MB，来自 dialog / window-state / opener 三个插件。
 其中 dialog 必需（选文件与目录），window-state 对应「窗口尺寸持久化」需求，
 opener 只用来「在资源管理器中显示」。若要压回 2.95 MB，去掉 opener 即可。
 
-安装后占用 185 MB 与预期完全一致（ffmpeg 180.6 MB + exe 3.69 MB + 前端资源）。
+前端从 232 KB 涨到 672 KB 是换 iX 的代价：iX 的样式表独占 213 KB，
+gzip 后 20 KB。安装包受压缩比影响只增了 0.15 MiB 左右。
+
+安装后占用 185 MB（ffmpeg 180.6 MB + exe 3.64 MB + 前端资源），与便携版解压后一致。
 
 ## 十、WebView2 安装模式的实际取舍
 

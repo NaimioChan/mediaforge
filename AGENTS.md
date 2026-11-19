@@ -67,6 +67,7 @@ npm run tauri build
    参数构建在缺流时返回 `Err` 而不是拼一条注定失败的参数表。
 5. **取消要清理残片。** `runner::run_ffmpeg` 的中断路径必须删除本次创建的目标文件。
 6. **界面颜色一律走 Siemens iX 的 CSS 变量**（`var(--theme-…)`），不硬编码色值。
+   色值只允许出现在 `src/theme.ts`，那里负责把它们展开成 token。
 7. **文档与提交信息用中文。** 不口语化，不用第二人称。
 8. **直拷必须过 `copy.rs` 的兼容表。** 容器不收该码流时自动回退重编码并说明原因，
    不得直接加 `-c copy` 让 ffmpeg 报错。表里的每一项都必须来自
@@ -121,8 +122,11 @@ npm run tauri build
 ## 已知约束
 
 - `vendor/` 在 `.gitignore` 里（181 MB）。新克隆后必须跑 `fetch-ffmpeg.ps1`。
-- `fetch-ffmpeg.ps1` 必须带 UTF-8 BOM。PowerShell 5.1 读无 BOM 的 UTF-8
-  会把中文注释解析错，报 `Try 语句缺少 Catch 或 Finally`。
+- `fetch-ffmpeg.ps1` 与 `make-portable.ps1` 必须带 UTF-8 BOM。PowerShell 5.1 读无 BOM 的
+  UTF-8 会把中文注释解析错：前者报 `Try 语句缺少 Catch 或 Finally`，
+  后者把含中文注释的那条 `Copy-Item` 整行吞掉，zip 里静默少一个 `LICENSE.txt`
+  （2.1.0 的便携版就是这样缺的 GPL 许可证）。`.gitattributes` 已把 `*.ps1` 标成
+  `-text`，但用工具重写脚本仍可能丢掉 BOM，改完用 `head -c 3 <脚本> | xxd` 确认是 `efbbbf`。
 - `src-tauri/tauri.conf.json` 的 `bundle.resources` 逐个列出 ffmpeg 的 9 个二进制，
   外加 `LICENSE.txt` 与 `THIRD-PARTY.md`。换 ffmpeg 版本时 DLL 名带版本号
   （`avcodec-63.dll` 等），必须同步改；漏了许可证文件就是违反 GPL 分发义务。
